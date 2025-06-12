@@ -44,5 +44,5 @@ El proyecto busca abordar la necesidad de automatización en la documentación d
 
 ---
 
-
 ## Roadmap:
+![Roadmap del proyecto](media/roadmap.png)
