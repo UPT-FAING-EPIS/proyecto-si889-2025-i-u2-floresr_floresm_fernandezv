@@ -12,12 +12,13 @@ public class MySqlDatabaseMetadataService : IDatabaseMetadataService
     public MySqlDatabaseMetadataService(IOpenAIService openAIService)
     {
         _openAIService = openAIService;
-    }
-
-    public async Task<List<TableSchemaDto>> ObtenerDiccionarioAsync(DatabaseConnectionDto dto)
+    }    public async Task<List<TableSchemaDto>> ObtenerDiccionarioAsync(DatabaseConnectionDto dto)
     {
         var resultado = new List<TableSchemaDto>();
-        var connectionString = $"Server={dto.Server};Database={dto.Database};Uid={dto.User};Pwd={dto.Password};";
+        
+        // Construir cadena de conexión con puerto opcional
+        var port = dto.Port ?? 3306; // Puerto por defecto de MySQL
+        var connectionString = $"Server={dto.Server};Port={port};Database={dto.Database};Uid={dto.User};Pwd={dto.Password};";
 
         using var connection = new MySqlConnection(connectionString);
         await connection.OpenAsync();

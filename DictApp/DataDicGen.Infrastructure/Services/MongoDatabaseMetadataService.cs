@@ -12,13 +12,16 @@ public class MongoDatabaseMetadataService : IDatabaseMetadataService
     public MongoDatabaseMetadataService(IOpenAIService openAIService)
     {
         _openAIService = openAIService;
-    }
-
-    public async Task<List<TableSchemaDto>> ObtenerDiccionarioAsync(DatabaseConnectionDto dto)
+    }    public async Task<List<TableSchemaDto>> ObtenerDiccionarioAsync(DatabaseConnectionDto dto)
     {
         var resultado = new List<TableSchemaDto>();
         var authSource = string.IsNullOrWhiteSpace(dto.AuthSource) ? "admin" : dto.AuthSource;
-        var connectionString = $"mongodb://{dto.User}:{dto.Password}@{dto.Server}/{dto.Database}?authSource={authSource}";
+        
+        // Construir cadena de conexión con puerto opcional
+        var port = dto.Port ?? 27017; // Puerto por defecto de MongoDB
+        var serverWithPort = dto.Port.HasValue ? $"{dto.Server}:{port}" : dto.Server;
+        var connectionString = $"mongodb://{dto.User}:{dto.Password}@{serverWithPort}/{dto.Database}?authSource={authSource}";
+        
         var client = new MongoClient(connectionString);
         var db = client.GetDatabase(dto.Database);
 

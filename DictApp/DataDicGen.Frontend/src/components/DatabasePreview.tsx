@@ -1,24 +1,98 @@
 import React, { useState } from 'react';
-import Card from 'antd/es/card';
-import { Button, Input, Table, Tabs, Checkbox, message } from 'antd';
-import Space from 'antd/es/space';
-import { EditOutlined, EyeOutlined, DownloadOutlined, ArrowLeftOutlined, DeleteOutlined } from '@ant-design/icons';
-import { ERDiagram } from './ERDiagram'; // ⬅️ IMPORTAR EL DIAGRAMA
+import {
+  Card,
+  CardContent,
+  Button,
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Tabs,
+  Tab,
+  Box,
+  Typography,
+  IconButton,
+  FormControlLabel,
+  Checkbox,
+  Paper,
+  Snackbar,
+  Alert
+} from '@mui/material';
+import {
+  Edit as EditIcon,
+  Visibility as VisibilityIcon,
+  Download as DownloadIcon,
+  ArrowBack as ArrowBackIcon,
+  Delete as DeleteIcon
+} from '@mui/icons-material';
+import { ERDiagram } from './ERDiagram';
+import { GlobalSearch } from './GlobalSearch';
+import { DatabaseMetrics } from './DatabaseMetrics';
 
 interface DatabasePreviewProps {
   preview: any;
   onExport: (data: any) => Promise<void>;
   onBack: () => void;
+  databaseType?: 'mysql' | 'postgresql' | 'mongodb' | 'sqlserver';
+}
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
 }
 
 export const DatabasePreview: React.FC<DatabasePreviewProps> = ({
   preview: initialPreview,
   onExport,
-  onBack
+  onBack,
+  databaseType = 'mysql'
 }) => {
   const [preview, setPreview] = useState(initialPreview);
   const [editingTable, setEditingTable] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [filteredTables, setFilteredTables] = useState(initialPreview.tables);
+  const [tabValue, setTabValue] = useState(0);
+  const [snackbar, setSnackbar] = useState({ 
+    open: false, 
+    message: '', 
+    severity: 'success' as 'success' | 'error' 
+  });
+
+  const showSnackbar = (message: string, severity: 'success' | 'error' = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const handleSearchResults = (searchResults: any[]) => {
+    setFilteredTables(searchResults);
+  };
 
   const handleTableChange = (tableIndex: number, field: string, value: string) => {
     const updatedTables = [...preview.tables];
@@ -34,25 +108,24 @@ export const DatabasePreview: React.FC<DatabasePreviewProps> = ({
     updatedTables[tableIndex].columns[columnIndex].description = value;
     setPreview({ ...preview, tables: updatedTables });
   };
-  // ⬅️ NUEVA FUNCIÓN: Eliminar tabla
+
   const handleDeleteTable = (tableIndex: number, tableName: string) => {
-    if (confirm(`¿Está seguro que desea eliminar la tabla "${tableName}" del diccionario?`)) {
+    if (window.confirm(`¿Está seguro que desea eliminar la tabla "${tableName}" del diccionario?`)) {
       const updatedTables = preview.tables.filter((_: any, index: number) => index !== tableIndex);
       setPreview({ ...preview, tables: updatedTables });
-      message.success(`Tabla "${tableName}" eliminada del diccionario`);
+      showSnackbar(`Tabla "${tableName}" eliminada del diccionario`);
       
-      // Si estaba editando esa tabla, quitar el modo edición
       if (editingTable === tableName) {
         setEditingTable(null);
       }
     }
   };
-   // ⬅️ NUEVA FUNCIÓN: Restaurar tabla eliminada (opcional)
+
   const handleRestoreAllTables = () => {
-    if (confirm('¿Desea restaurar todas las tablas originales?')) {
+    if (window.confirm('¿Desea restaurar todas las tablas originales?')) {
       setPreview(initialPreview);
       setEditingTable(null);
-      message.success('Todas las tablas han sido restauradas');
+      showSnackbar('Todas las tablas han sido restauradas');
     }
   };
 
@@ -67,237 +140,281 @@ export const DatabasePreview: React.FC<DatabasePreviewProps> = ({
     setLoading(true);
     try {
       await onExport(preview);
-      message.success('PDF exportado exitosamente');
+      showSnackbar('PDF exportado exitosamente');
     } catch (error) {
-      message.error('Error al exportar PDF');
+      showSnackbar('Error al exportar PDF', 'error');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
   const renderTableCard = (table: any, tableIndex: number) => {
     const isEditing = editingTable === table.tableName;
 
-    const columns = [
-      { title: 'Nº', width: 50, render: (_: any, __: any, index: number) => index + 1 },
-      { title: 'Nombre', dataIndex: 'columnName', key: 'columnName' },
-      { title: 'Tipo', dataIndex: 'dataType', key: 'dataType' },
-      { title: 'Nulo', dataIndex: 'isNullable', render: (val: boolean) => val ? 'Sí' : 'No' },
-      { title: 'PK', dataIndex: 'isPrimaryKey', render: (val: boolean) => val ? 'Sí' : 'No' },
-      { title: 'FK', dataIndex: 'isForeignKey', render: (val: boolean) => val ? 'Sí' : 'No' },
-      {
-        title: 'Descripción',
-        dataIndex: 'description',
-        render: (text: string, record: any, index: number) => 
-          isEditing ? (
-            <Input.TextArea
-              value={text || ''}
-              onChange={(e) => handleColumnChange(tableIndex, index, e.target.value)}
-              rows={2}
-              placeholder="Descripción del campo..."
-            />
-          ) : (
-            <span style={{ fontSize: '12px' }}>{text || 'Sin descripción'}</span>
-          )
-      }
-    ];
-
     return (
-      <Card
-        key={table.tableName}
-        title={
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>📋 {table.tableName}</span>
-            <Space>
-            <Button
-              icon={isEditing ? <EyeOutlined /> : <EditOutlined />}
-              onClick={() => setEditingTable(isEditing ? null : table.tableName)}
-              type={isEditing ? "primary" : "default"}
-              size="small"
-            >
-              {isEditing ? 'Vista' : 'Editar'}
-            </Button>
-                {/* ⬅️ NUEVO BOTÓN DE ELIMINAR */}
-              <Button
-                icon={<DeleteOutlined />}
+      <Card key={table.tableName} sx={{ mb: 2 }}>
+        <CardContent>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            <Typography variant="h6">📋 {table.tableName}</Typography>
+            <Box>
+              <IconButton
+                onClick={() => setEditingTable(isEditing ? null : table.tableName)}
+                color={isEditing ? "primary" : "default"}
+                size="small"
+              >
+                {isEditing ? <VisibilityIcon /> : <EditIcon />}
+              </IconButton>
+              <IconButton
                 onClick={() => handleDeleteTable(tableIndex, table.tableName)}
-                type="text"
-                danger
+                color="error"
                 size="small"
                 title="Eliminar tabla del diccionario"
               >
-                Eliminar
-              </Button>
-            </Space>
-          </div>
-        }
-        style={{ marginBottom: 16 }}
-      >
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <strong>Descripción:</strong>
+                <DeleteIcon />
+              </IconButton>
+            </Box>
+          </Box>
+
+          <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2} mb={2}>
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>Descripción:</Typography>
               {isEditing ? (
-                <Input.TextArea
+                <TextField
+                  multiline
+                  rows={3}
+                  fullWidth
                   value={table.tableDescription || ''}
                   onChange={(e) => handleTableChange(tableIndex, 'tableDescription', e.target.value)}
-                  rows={3}
                   placeholder="Descripción de la tabla..."
-                  style={{ marginTop: 8 }}
+                  variant="outlined"
+                  size="small"
                 />
               ) : (
-                <p style={{ margin: '8px 0', color: '#666', fontSize: '14px' }}>
+                <Typography variant="body2" color="text.secondary">
                   {table.tableDescription || 'Sin descripción'}
-                </p>
+                </Typography>
               )}
-            </div>
-            <div>
-              <strong>Propósito:</strong>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>Propósito:</Typography>
               {isEditing ? (
-                <Input.TextArea
+                <TextField
+                  multiline
+                  rows={3}
+                  fullWidth
                   value={table.tablePurpose || ''}
                   onChange={(e) => handleTableChange(tableIndex, 'tablePurpose', e.target.value)}
-                  rows={3}
                   placeholder="Propósito de la tabla..."
-                  style={{ marginTop: 8 }}
+                  variant="outlined"
+                  size="small"
                 />
               ) : (
-                <p style={{ margin: '8px 0', color: '#666', fontSize: '14px' }}>
+                <Typography variant="body2" color="text.secondary">
                   {table.tablePurpose || 'Sin propósito definido'}
-                </p>
+                </Typography>
               )}
-            </div>
-          </div>
-        </div>
+            </Box>
+          </Box>
 
-        <Table
-          columns={columns}
-          dataSource={table.columns.map((col: any, index: number) => ({
-            ...col,
-            key: `${table.tableName}-${col.columnName}-${index}`
-          }))}
-          pagination={false}
-          size="small"
-          scroll={{ x: 800 }}
-        />
+          <TableContainer component={Paper} variant="outlined">
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell width={50}>Nº</TableCell>
+                  <TableCell>Nombre</TableCell>
+                  <TableCell>Tipo</TableCell>
+                  <TableCell>Nulo</TableCell>
+                  <TableCell>PK</TableCell>
+                  <TableCell>FK</TableCell>
+                  <TableCell>Descripción</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {table.columns.map((column: any, columnIndex: number) => (
+                  <TableRow key={columnIndex}>
+                    <TableCell>{columnIndex + 1}</TableCell>
+                    <TableCell>{column.columnName}</TableCell>
+                    <TableCell>{column.dataType}</TableCell>
+                    <TableCell>{column.isNullable ? 'Sí' : 'No'}</TableCell>
+                    <TableCell>{column.isPrimaryKey ? 'Sí' : 'No'}</TableCell>
+                    <TableCell>{column.isForeignKey ? 'Sí' : 'No'}</TableCell>
+                    <TableCell>
+                      {isEditing ? (
+                        <TextField
+                          multiline
+                          rows={2}
+                          fullWidth
+                          value={column.description || ''}
+                          onChange={(e) => handleColumnChange(tableIndex, columnIndex, e.target.value)}
+                          placeholder="Descripción del campo..."
+                          variant="outlined"
+                          size="small"
+                        />
+                      ) : (
+                        <Typography variant="body2" fontSize="12px">
+                          {column.description || 'Sin descripción'}
+                        </Typography>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
       </Card>
     );
   };
 
-  const tabItems = [
-        {
-      key: 'er-diagram', // ⬅️ NUEVA TAB PARA EL DIAGRAMA
-      label: '🔗 Diagrama ER',
-      children: (
-        <div style={{ height: '700px', width: '100%' }}>
-          <ERDiagram tables={preview.tables || []} />
-        </div>
-      )
-    },
-    {
-      key: 'config',
-      label: '⚙️ Configuración',
-      children: (
-        <Card title="Configuración del Documento">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div>
-              <label><strong>Título:</strong></label>
-              <Input
-                value={preview.metadata.title}
-                onChange={(e) => handleMetadataChange('title', e.target.value)}
-                placeholder="Título del documento"
-                style={{ marginTop: 8 }}
-              />
-            </div>
-            <div>
-              <label><strong>Descripción:</strong></label>
-              <Input.TextArea
-                value={preview.metadata.description}
-                onChange={(e) => handleMetadataChange('description', e.target.value)}
-                placeholder="Descripción general"
-                rows={3}
-                style={{ marginTop: 8 }}
-              />
-            </div>
-          </div>
-          <div style={{ marginTop: 16, display: 'flex', gap: '16px' }}>
-            <Checkbox
-              checked={preview.metadata.includeDML}
-              onChange={(e) => handleMetadataChange('includeDML', e.target.checked)}
-            >
-              Incluir DML (Inserts)
-            </Checkbox>
-            <Checkbox
-              checked={preview.metadata.includeDDL}
-              onChange={(e) => handleMetadataChange('includeDDL', e.target.checked)}
-            >
-              Incluir DDL (Create Tables)
-            </Checkbox>
-            <Checkbox
-              checked={preview.metadata.includeStoredProcedures}
-              onChange={(e) => handleMetadataChange('includeStoredProcedures', e.target.checked)}
-            >
-              Incluir Procedimientos
-            </Checkbox>
-          </div>
-          {/* ⬅️ NUEVA SECCIÓN: Gestión de Tablas */}
-          <div style={{ marginTop: 24, padding: 16, backgroundColor: '#f8f9fa', borderRadius: 8 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <strong>Gestión de Tablas</strong>
-                <p style={{ margin: '4px 0', color: '#666', fontSize: '14px' }}>
-                  Tablas incluidas: {preview.tables?.length || 0} 
-                  {initialPreview.tables.length !== preview.tables?.length && 
-                    ` (${initialPreview.tables.length - preview.tables.length} eliminadas)`
-                  }
-                </p>
-              </div>
-              <Button
-                onClick={handleRestoreAllTables}
-                type="outline"
-                size="small"
-                disabled={initialPreview.tables.length === preview.tables?.length}
-              >
-                Restaurar Todas
-              </Button>
-            </div>
-          </div>
-        </Card>
-        
-      )
-    },
-    {
-      key: 'tables',
-      label: `📊 Tablas (${preview.tables?.length || 0})`,
-      children: (
-        <div>
-          {preview.tables?.map((table: any, index: number) => renderTableCard(table, index))}
-        </div>
-      )
-    }
-  ];
-
   return (
-    <div style={{ padding: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2>📄 Vista Previa del Diccionario</h2>
-        <Space>
-          <Button icon={<ArrowLeftOutlined />} onClick={onBack}>
+    <Box sx={{ p: 3 }}>
+      <GlobalSearch tables={preview.tables || []} onSearchResults={handleSearchResults} />
+      
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h4">📄 Vista Previa del Diccionario</Typography>
+        <Box>
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={onBack}
+            sx={{ mr: 2 }}
+          >
             Atrás
           </Button>
           <Button
-            type="primary"
-            icon={<DownloadOutlined />}
+            variant="contained"
+            startIcon={<DownloadIcon />}
             onClick={handleExport}
-            loading={loading}
+            disabled={loading}
             size="large"
           >
             Exportar PDF
           </Button>
-        </Space>
-      </div>
+        </Box>
+      </Box>      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs value={tabValue} onChange={handleTabChange}>
+          <Tab label="🗂️ Metadatos" />
+          <Tab label="📊 Métricas" />
+          <Tab label="🌐 Diagrama ER" />
+          <Tab label={`� Tablas (${filteredTables?.length || 0})`} />
+        </Tabs>
+      </Box>
 
-      <Tabs items={tabItems} defaultActiveKey="tables" />
-    </div>
-  );
+      <TabPanel value={tabValue} index={0}>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>📋 Información del Documento</Typography>
+            
+            <Box mb={3}>
+              <Typography variant="subtitle2" gutterBottom>Título:</Typography>
+              <TextField
+                fullWidth
+                value={preview.metadata?.title || ''}
+                onChange={(e) => handleMetadataChange('title', e.target.value)}
+                placeholder="Título del documento..."
+                variant="outlined"
+                sx={{ mt: 1 }}
+              />
+            </Box>
+
+            <Box mb={3}>
+              <Typography variant="subtitle2" gutterBottom>Descripción:</Typography>
+              <TextField
+                multiline
+                rows={4}
+                fullWidth
+                value={preview.metadata?.description || ''}
+                onChange={(e) => handleMetadataChange('description', e.target.value)}
+                placeholder="Descripción del documento..."
+                variant="outlined"
+                sx={{ mt: 1 }}
+              />
+            </Box>
+
+            <Typography variant="h6" gutterBottom>⚙️ Opciones de Exportación</Typography>
+            
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={preview.metadata?.includeDML || false}
+                  onChange={(e) => handleMetadataChange('includeDML', e.target.checked)}
+                />
+              }
+              label="Incluir sentencias DML (INSERT, UPDATE, DELETE)"
+            />
+            
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={preview.metadata?.includeDDL || false}
+                  onChange={(e) => handleMetadataChange('includeDDL', e.target.checked)}
+                />
+              }
+              label="Incluir sentencias DDL (CREATE, ALTER, DROP)"
+            />
+            
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={preview.metadata?.includeStoredProcedures || false}
+                  onChange={(e) => handleMetadataChange('includeStoredProcedures', e.target.checked)}
+                />
+              }
+              label="Incluir procedimientos almacenados"
+            />
+
+            <Box mt={3} p={2} bgcolor="grey.100" borderRadius={1}>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box>
+                  <Typography variant="subtitle1">Gestión de Tablas</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Tablas incluidas: {preview.tables?.length || 0}
+                    {initialPreview.tables.length !== preview.tables?.length && 
+                      ` (${initialPreview.tables.length - preview.tables.length} eliminadas)`
+                    }
+                  </Typography>
+                </Box>
+                <Button
+                  onClick={handleRestoreAllTables}
+                  variant="outlined"
+                  size="small"
+                  disabled={initialPreview.tables.length === preview.tables?.length}
+                >
+                  Restaurar Todas
+                </Button>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+      </TabPanel>      <TabPanel value={tabValue} index={1}>
+        <DatabaseMetrics tables={filteredTables || []} databaseType={databaseType} />
+      </TabPanel>
+
+      <TabPanel value={tabValue} index={2}>
+        <ERDiagram tables={filteredTables || []} />
+      </TabPanel>
+
+      <TabPanel value={tabValue} index={3}>
+        <Box>
+          {filteredTables?.map((table: any, index: number) => renderTableCard(table, index))}
+        </Box>
+      </TabPanel>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>  );
 };

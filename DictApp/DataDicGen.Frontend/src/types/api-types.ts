@@ -3,6 +3,7 @@ export interface DatabaseConnectionDto {
   database: string;
   user: string;
   password: string;
+  port?: number; // Puerto opcional
   authSource?: string; // Campo opcional para soportar la autenticación personalizada en MongoDB
 }
 

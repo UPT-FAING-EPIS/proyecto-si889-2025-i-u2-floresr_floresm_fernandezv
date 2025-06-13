@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Box, Button, Card, CardContent, TextField, Typography, 
-  CircularProgress, Alert, Grid, Divider
+  CircularProgress, Alert, Divider
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -11,7 +11,7 @@ import { apiService } from '../services/api-service';
 
 // ⬅️ Agregar prop para manejar el preview
 interface SqlConnectionFormProps {
-  onPreviewGenerated?: (data: any) => void;
+  onPreviewGenerated?: (data: any, dbType?: 'mysql' | 'postgresql' | 'mongodb' | 'sqlserver') => void;
   
 }
 
@@ -46,14 +46,13 @@ const SqlConnectionForm: React.FC<SqlConnectionFormProps> = ({ onPreviewGenerate
     }
   };
   // ⬅️ Nueva función para generar preview
-  const handleGeneratePreview = async () => {
-    try {
+  const handleGeneratePreview = async () => {    try {
       setLoading(true);
       setError(null);
       
       // Usar api-service en lugar de fetch directo
       const data = await apiService.generatePreview(connectionData);
-      onPreviewGenerated?.(data);
+      onPreviewGenerated?.(data, 'sqlserver'); // <-- Pasamos el tipo de BD
       
     } catch (err) {
       if (err instanceof Error) {
@@ -269,35 +268,34 @@ const SqlConnectionForm: React.FC<SqlConnectionFormProps> = ({ onPreviewGenerate
             <Typography variant="body2" color="text.secondary" paragraph align="center">
               O descargue directamente:
             </Typography>
-            
-            <Grid container spacing={3} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6}>
-                <Button
-                  variant="outlined" // ⬅️ Cambiar a outlined para dar menos prioridad
-                  color="primary"
-                  onClick={handleDownloadPdf}
-                  disabled={loading}
-                  fullWidth
-                  startIcon={<PictureAsPdfIcon />}
-                  sx={{ py: 1.5 }}
-                >
-                  Generar PDF Directo
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Button
-                  variant="outlined" // ⬅️ Cambiar a outlined
-                  color="secondary"
-                  onClick={handleDownloadWord}
-                  disabled={loading}
-                  fullWidth
-                  startIcon={<DescriptionIcon />}
-                  sx={{ py: 1.5 }}
-                >
-                  Generar Word Directo
-                </Button>
-              </Grid>
-            </Grid>
+              <Box 
+              display="grid" 
+              gridTemplateColumns="repeat(auto-fit, minmax(200px, 1fr))" 
+              gap={3} 
+              sx={{ mt: 1 }}
+            >
+              <Button
+                variant="outlined" // ⬅️ Cambiar a outlined para dar menos prioridad
+                color="primary"
+                onClick={handleDownloadPdf}
+                disabled={loading}
+                fullWidth
+                startIcon={<PictureAsPdfIcon />}
+                sx={{ py: 1.5 }}
+              >
+                Generar PDF Directo
+              </Button>
+              <Button
+                variant="outlined" // ⬅️ Cambiar a outlined
+                color="secondary"
+                onClick={handleDownloadWord}
+                disabled={loading}
+                fullWidth
+                startIcon={<DescriptionIcon />}
+                sx={{ py: 1.5 }}              >
+                Generar Word Directo
+              </Button>
+            </Box>
           </>
         )}
       </CardContent>
