@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Container, Box, Grid, Paper, Typography, Button
+  Container, Box, Paper, Typography, Button
 } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -71,18 +71,22 @@ const MainMenu: React.FC<MainMenuProps> = ({ onSelectOption }) => {
         <Typography variant="h4" component="h1" gutterBottom align="center">
           Selecciona una opción
         </Typography>
-        
-        <Grid container spacing={3} sx={{ mt: 2 }}>
+          <Box 
+          display="grid" 
+          gridTemplateColumns="repeat(auto-fit, minmax(280px, 1fr))" 
+          gap={3} 
+          sx={{ mt: 2 }}
+        >
           {menuOptions.map((option) => (
-            <Grid item xs={12} sm={6} md={3} key={option.id}>
-              <Paper 
-                elevation={3} 
-                sx={{ 
-                  p: 3, 
-                  textAlign: 'center',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
+            <Paper 
+              key={option.id}
+              elevation={3} 
+              sx={{ 
+                p: 3, 
+                textAlign: 'center',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
                   transition: 'transform 0.2s',
                   '&:hover': {
                     transform: 'scale(1.05)',
@@ -102,8 +106,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ onSelectOption }) => {
                   {option.icon}
                 </Box>
                 <Typography variant="h6" component="h3" gutterBottom>
-                  {option.title}
-                </Typography>
+                  {option.title}                </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flexGrow: 1 }}>
                   {option.description}
                 </Typography>
@@ -115,9 +118,8 @@ const MainMenu: React.FC<MainMenuProps> = ({ onSelectOption }) => {
                   Seleccionar
                 </Button>
               </Paper>
-            </Grid>
           ))}
-        </Grid>
+        </Box>
       </Box>
     </Container>
   );

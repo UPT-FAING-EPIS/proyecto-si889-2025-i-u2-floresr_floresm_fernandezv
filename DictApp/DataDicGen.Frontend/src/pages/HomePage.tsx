@@ -20,11 +20,11 @@ enum AppScreen {
   DATABASE_PREVIEW // ⬅️ Agregar nueva pantalla
 }
 
-const HomePage: React.FC = () => {
-  // Estado para controlar qué pantalla mostrar
+const HomePage: React.FC = () => {  // Estado para controlar qué pantalla mostrar
   const [currentScreen, setCurrentScreen] = useState<AppScreen>(AppScreen.LOGIN);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [previewData, setPreviewData] = useState<any>(null); // ⬅️ Agregar estado para preview
+  const [databaseType, setDatabaseType] = useState<'mysql' | 'postgresql' | 'mongodb' | 'sqlserver'>('mysql');
   
   // Manejar el éxito del login
   const handleLoginSuccess = () => {
@@ -101,21 +101,21 @@ const renderCurrentScreen = () => {
       case AppScreen.POSTGRES_CONNECTION:
         return <PostgresConnectionForm onPreviewGenerated={handlePreviewGenerated} />;
       case AppScreen.MONGO_CONNECTION:
-        return <MongoConnectionForm onPreviewGenerated={handlePreviewGenerated} />;
-      case AppScreen.DATABASE_PREVIEW:
+        return <MongoConnectionForm onPreviewGenerated={handlePreviewGenerated} />;      case AppScreen.DATABASE_PREVIEW:
         return previewData ? (
           <DatabasePreview
             preview={previewData}
             onExport={handleExportPdf}
             onBack={handleBackFromPreview}
+            databaseType={databaseType} // <-- Pasamos el tipo de BD
           />
         ) : <div>Cargando preview...</div>;
       default:
         return <div>Pantalla no encontrada</div>;
     }
-  };
-   const handlePreviewGenerated = (data: any) => {
+  };   const handlePreviewGenerated = (data: any, dbType: 'mysql' | 'postgresql' | 'mongodb' | 'sqlserver' = 'mysql') => {
     setPreviewData(data);
+    setDatabaseType(dbType);
     setCurrentScreen(AppScreen.DATABASE_PREVIEW);
   };
   const handleExportPdf = async (editedData: any) => {

@@ -12,12 +12,13 @@ public class PostgresDatabaseMetadataService : IDatabaseMetadataService
     public PostgresDatabaseMetadataService(IOpenAIService openAIService)
     {
         _openAIService = openAIService;
-    }
-
-    public async Task<List<TableSchemaDto>> ObtenerDiccionarioAsync(DatabaseConnectionDto dto)
+    }    public async Task<List<TableSchemaDto>> ObtenerDiccionarioAsync(DatabaseConnectionDto dto)
     {
         var resultado = new List<TableSchemaDto>();
-        var connectionString = $"Host={dto.Server};Database={dto.Database};Username={dto.User};Password={dto.Password};";
+        
+        // Construir cadena de conexión con puerto opcional
+        var port = dto.Port ?? 5432; // Puerto por defecto de PostgreSQL
+        var connectionString = $"Host={dto.Server};Port={port};Database={dto.Database};Username={dto.User};Password={dto.Password};";
 
         using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();

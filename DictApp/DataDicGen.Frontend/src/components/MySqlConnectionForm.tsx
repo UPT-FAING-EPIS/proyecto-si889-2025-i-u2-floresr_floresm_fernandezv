@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
 import { 
   Box, Button, Card, CardContent, TextField, Typography, 
-  CircularProgress, Alert, Grid, Divider
+  CircularProgress, Alert
 } from '@mui/material';
 import PreviewIcon from '@mui/icons-material/Preview';
 import { DatabaseConnectionDto } from '../types/api-types';
 import { apiService } from '../services/api-service';
 
 interface MySqlConnectionFormProps {
-  onPreviewGenerated?: (data: any) => void;
+  onPreviewGenerated?: (data: any, databaseType?: 'mysql' | 'postgresql' | 'mongodb' | 'sqlserver') => void;
 }
 
-const MySqlConnectionForm: React.FC<MySqlConnectionFormProps> = ({ onPreviewGenerated }) => {
-  const [connectionData, setConnectionData] = useState<DatabaseConnectionDto>({
-    server: '',
-    database: '',
-    user: '',
-    password: ''
+const MySqlConnectionForm: React.FC<MySqlConnectionFormProps> = ({ onPreviewGenerated }) => {  const [connectionData, setConnectionData] = useState<DatabaseConnectionDto>({
+    server: 'localhost',
+    database: 'test',
+    user: 'root',
+    password: '',
+    port: 3306 // Puerto por defecto de MySQL
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,13 +25,12 @@ const MySqlConnectionForm: React.FC<MySqlConnectionFormProps> = ({ onPreviewGene
     const { name, value } = e.target;
     setConnectionData(prev => ({ ...prev, [name]: value }));
   };
-
   const handleGeneratePreview = async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await apiService.generatePreviewMySql(connectionData);
-      onPreviewGenerated?.(data);
+      onPreviewGenerated?.(data, 'mysql');
     } catch (err) {
       setError('Error al generar preview MySQL');
       console.error('Error completo:', err);
@@ -48,8 +47,7 @@ const MySqlConnectionForm: React.FC<MySqlConnectionFormProps> = ({ onPreviewGene
         </Typography>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
-        )}
-        <TextField
+        )}        <TextField
           label="Servidor"
           name="server"
           value={connectionData.server}
@@ -59,15 +57,27 @@ const MySqlConnectionForm: React.FC<MySqlConnectionFormProps> = ({ onPreviewGene
           required
           placeholder="localhost"
         />
-        <TextField
-          label="Base de datos"
-          name="database"
-          value={connectionData.database}
-          onChange={handleChange}
-          fullWidth
-          margin="normal"
-          required
-        />
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <TextField
+            label="Puerto"
+            name="port"
+            type="number"
+            value={connectionData.port}
+            onChange={(e) => setConnectionData(prev => ({ ...prev, port: parseInt(e.target.value) || 3306 }))}
+            margin="normal"
+            sx={{ width: '30%' }}
+            placeholder="3306"
+          />
+          <TextField
+            label="Base de datos"
+            name="database"
+            value={connectionData.database}
+            onChange={handleChange}
+            margin="normal"
+            required
+            sx={{ width: '70%' }}
+          />
+        </Box>
         <TextField
           label="Usuario"
           name="user"

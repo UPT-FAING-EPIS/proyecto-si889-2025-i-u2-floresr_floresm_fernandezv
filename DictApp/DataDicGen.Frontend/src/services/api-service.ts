@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { DatabaseConnectionDto, ConnectionResponseDto, TableSchemaDto } from '../types/api-types';
+import { DatabaseConnectionDto, ConnectionResponseDto } from '../types/api-types';
 
 // URL base de la API backend (actualizada al puerto correcto)
 const API_URL = 'http://localhost:5175/api';
@@ -17,13 +17,29 @@ export const apiService = {
   // Autenticar usuario
   async login(username: string, password: string): Promise<boolean> {
     try {
+      console.log('Intentando login con:', { username, apiUrl: API_URL });
+      
       const response = await apiClient.post('/Auth/login', {
         username,
         password
       });
+      
+      console.log('Respuesta del login:', response.status, response.data);
       return response.status === 200;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error de autenticación:', error);
+      
+      if (error.response) {
+        // El servidor respondió con un código de error
+        console.error('Error response:', error.response.status, error.response.data);
+      } else if (error.request) {
+        // La request se hizo pero no se recibió respuesta
+        console.error('Error request:', error.request);
+      } else {
+        // Algo pasó al configurar la request
+        console.error('Error config:', error.message);
+      }
+      
       return false;
     }
   },
@@ -89,11 +105,27 @@ export const apiService = {
     });
     return response.data;
   },
-
   // Generar vista previa editable del diccionario para MySQL
   async generatePreviewMySql(credentials: DatabaseConnectionDto): Promise<any> {
-    const response = await apiClient.post('/Metadata/mysql/generate-preview', credentials);
-    return response.data;
+    try {
+      console.log('Enviando datos MySQL:', credentials);
+      const response = await apiClient.post('/Metadata/mysql/generate-preview', credentials);
+      console.log('Respuesta MySQL exitosa:', response.status, response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error MySQL completo:', error);
+      
+      if (error.response) {
+        console.error('Error MySQL response:', error.response.status, error.response.data);
+        console.error('Headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('Error MySQL request:', error.request);
+      } else {
+        console.error('Error MySQL config:', error.message);
+      }
+      
+      throw error;
+    }
   },
 
   // Generar vista previa editable del diccionario para PostgreSQL

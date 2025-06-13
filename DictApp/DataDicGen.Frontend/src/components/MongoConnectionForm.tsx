@@ -5,7 +5,7 @@ import { DatabaseConnectionDto } from '../types/api-types';
 import { apiService } from '../services/api-service';
 
 interface MongoConnectionFormProps {
-  onPreviewGenerated?: (data: any) => void;
+  onPreviewGenerated?: (data: any, dbType?: 'mysql' | 'postgresql' | 'mongodb' | 'sqlserver') => void;
 }
 
 const MongoConnectionForm: React.FC<MongoConnectionFormProps> = ({ onPreviewGenerated }) => {
@@ -22,13 +22,12 @@ const MongoConnectionForm: React.FC<MongoConnectionFormProps> = ({ onPreviewGene
     const { name, value } = e.target;
     setConnectionData(prev => ({ ...prev, [name]: value }));
   };
-
   const handleGeneratePreview = async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await apiService.generatePreviewMongo(connectionData);
-      onPreviewGenerated?.(data);
+      onPreviewGenerated?.(data, 'mongodb'); // <-- Pasamos el tipo de BD
     } catch (err) {
       setError('Error al generar preview MongoDB');
       console.error('Error completo:', err);

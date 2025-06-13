@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Box, Button, Card, CardContent, TextField, Typography, 
-  CircularProgress, Alert, Grid 
+  CircularProgress, Alert 
 } from '@mui/material';
 import { DatabaseConnectionDto } from '../types/api-types';
 import { apiService } from '../services/api-service';
@@ -217,43 +217,40 @@ const DatabaseConnectionForm: React.FC = () => {
             </Button>
           </Box>
         </form>
-        
-        {(connectionToken || (connectionData.server && connectionData.database && connectionData.user && connectionData.password)) && (
-          <Grid container spacing={2} sx={{ mt: 2 }}>
-            <Grid item xs={12} sm={4}>
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={handleDownloadPdf}
-                disabled={loading}
-                fullWidth
-              >
-                Descargar PDF
-              </Button>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Button
-                variant="outlined"
-                color="secondary"
-                onClick={handleDownloadWord}
-                disabled={loading}
-                fullWidth
-              >
-                Descargar Word
-              </Button>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Button
-                variant="outlined"
-                color="info"
-                onClick={handleViewPdf}
-                disabled={loading}
-                fullWidth
-              >
-                Visualizar PDF
-              </Button>
-            </Grid>
-          </Grid>
+          {(connectionToken || (connectionData.server && connectionData.database && connectionData.user && connectionData.password)) && (
+          <Box 
+            display="grid" 
+            gridTemplateColumns="repeat(auto-fit, minmax(200px, 1fr))" 
+            gap={2} 
+            sx={{ mt: 2 }}
+          >
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={handleDownloadPdf}
+              disabled={loading}
+              fullWidth
+            >
+              Descargar PDF
+            </Button>
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={handleDownloadWord}
+              disabled={loading}
+              fullWidth
+            >
+              Descargar Word
+            </Button>
+            <Button
+              variant="outlined"
+              color="info"
+              onClick={handleViewPdf}
+              disabled={loading}              fullWidth
+            >
+              Visualizar PDF
+            </Button>
+          </Box>
         )}
       </CardContent>
     </Card>

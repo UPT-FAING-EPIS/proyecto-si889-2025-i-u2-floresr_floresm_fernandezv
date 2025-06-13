@@ -34,9 +34,15 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // URL del frontend
+        policy.WithOrigins(
+                "http://localhost:5173", // URL del frontend en Vite
+                "http://localhost:5174", // URL alternativa
+                "http://localhost:3000", // URL de React (por si acaso)
+                "http://localhost:3001"  // URL alternativa
+              )
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials(); // Permitir credenciales si es necesario
     });
 });
 

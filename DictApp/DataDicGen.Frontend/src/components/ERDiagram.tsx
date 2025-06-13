@@ -10,6 +10,7 @@ import ReactFlow, {
   useEdgesState,
   Connection,
   ConnectionMode,
+  BackgroundVariant,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import './ERDiagram.css';
@@ -96,7 +97,7 @@ export const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
     return edges;
   }, [tables]);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const onConnect = useCallback(
@@ -123,7 +124,7 @@ export const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
         >
           <Controls />
           <MiniMap />
-          <Background variant="dots" gap={12} size={1} />
+          <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
         </ReactFlow>
       </div>
     </div>
