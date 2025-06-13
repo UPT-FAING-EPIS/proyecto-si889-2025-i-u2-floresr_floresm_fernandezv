@@ -1,119 +1,201 @@
 import React from 'react';
 import { 
-  Container, Box, Paper, Typography, Button
+  Container, Box, Paper, Typography, Button, Chip
 } from '@mui/material';
-import StorageIcon from '@mui/icons-material/Storage';
-import MemoryIcon from '@mui/icons-material/Memory';
-import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import { 
+  Storage as StorageIcon, 
+  Memory as MemoryIcon, 
+  AccountTree as AccountTreeIcon, 
+  ViewModule as ViewModuleIcon
+} from '@mui/icons-material';
 
 interface MainMenuProps {
   onSelectOption: (option: string) => void;
 }
 
-const MainMenu: React.FC<MainMenuProps> = ({ onSelectOption }) => {  // Opciones del menú principal
-  const menuOptions = [
+const MainMenu: React.FC<MainMenuProps> = ({ onSelectOption }) => {  const menuOptions = [
     {
       id: 'sql',
       title: 'SQL Server',
       description: 'Base de datos relacional de Microsoft',
       icon: <StorageIcon fontSize="large" />,
-      color: '#1976d2'
+      color: '#1976d2',
+      gradient: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+      type: 'Relacional'
     },
     {
       id: 'mysql',
       title: 'MySQL',
       description: 'Base de datos relacional open source',
       icon: <StorageIcon fontSize="large" />,
-      color: '#388e3c'
+      color: '#388e3c',
+      gradient: 'linear-gradient(135deg, #388e3c 0%, #66bb6a 100%)',
+      type: 'Relacional'
     },
     {
       id: 'postgres',
       title: 'PostgreSQL',
       description: 'Base de datos relacional avanzada',
       icon: <StorageIcon fontSize="large" />,
-      color: '#ff7043'
+      color: '#ff7043',
+      gradient: 'linear-gradient(135deg, #ff7043 0%, #ffab91 100%)',
+      type: 'Relacional'
     },
     {
       id: 'mongo',
       title: 'MongoDB',
       description: 'Base de datos NoSQL orientada a documentos',
       icon: <AccountTreeIcon fontSize="large" />,
-      color: '#26a69a'
+      color: '#26a69a',
+      gradient: 'linear-gradient(135deg, #26a69a 0%, #4db6ac 100%)',
+      type: 'NoSQL'
     },
     {
       id: 'redis',
       title: 'Redis',
       description: 'Base de datos en memoria clave-valor',
       icon: <MemoryIcon fontSize="large" />,
-      color: '#e53e3e'
+      color: '#e53e3e',
+      gradient: 'linear-gradient(135deg, #e53e3e 0%, #ff6b6b 100%)',
+      type: 'NoSQL'
     },
     {
       id: 'cassandra',
       title: 'Cassandra',
       description: 'Base de datos NoSQL orientada a columnas',
       icon: <ViewModuleIcon fontSize="large" />,
-      color: '#9c27b0'
+      color: '#9c27b0',
+      gradient: 'linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%)',
+      type: 'NoSQL'
     }
-  ];
-
-  return (
-    <Container maxWidth="lg">
-      <Box sx={{ my: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center">
-          Selecciona una opción
-        </Typography>
-          <Box 
+  ];  return (
+    <Box 
+      sx={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        margin: 0,
+        padding: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center'
+      }}
+    >
+      <Container maxWidth="lg" sx={{ py: 2, px: { xs: 2, sm: 4 } }}>        <Box sx={{ mb: 4, textAlign: 'center' }}>
+          <Typography 
+            variant="h3" 
+            component="h1" 
+            fontWeight="bold" 
+            color="primary.main"
+            sx={{ mb: 1 }}
+          >
+            DataDicGen
+          </Typography>
+          <Typography 
+            variant="h5" 
+            color="text.secondary" 
+            sx={{ mb: 1 }}
+          >
+            Generador de Diccionario de Datos
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Selecciona el tipo de base de datos que deseas analizar
+          </Typography>
+        </Box>            <Box 
           display="grid" 
-          gridTemplateColumns="repeat(auto-fit, minmax(280px, 1fr))" 
+          gridTemplateColumns="repeat(auto-fit, minmax(320px, 1fr))" 
           gap={3} 
           sx={{ mt: 2 }}
         >
-          {menuOptions.map((option) => (
+          {menuOptions.map((option, index) => (
             <Paper 
               key={option.id}
-              elevation={3} 
+              elevation={0} 
+              className="hover-lift"
               sx={{ 
-                p: 3, 
-                textAlign: 'center',
+                borderRadius: 3,
+                overflow: 'hidden',
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                  transition: 'transform 0.2s',
-                  '&:hover': {
-                    transform: 'scale(1.05)',
-                    cursor: 'pointer'
-                  }
+                transition: 'all 0.3s ease-in-out',
+                border: '1px solid rgba(0,0,0,0.1)',
+                background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                animation: `fadeIn 0.6s ease-out ${index * 0.1}s both`,
+                '&:hover': {
+                  transform: 'translateY(-8px)',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                  cursor: 'pointer'
+                }
+              }}
+              onClick={() => onSelectOption(option.id)}
+            >
+              {/* Header con gradiente */}
+              <Box 
+                sx={{ 
+                  background: option.gradient,
+                  p: 3,
+                  textAlign: 'center',
+                  color: 'white'
                 }}
-                onClick={() => onSelectOption(option.id)}
               >
-                <Box 
-                  sx={{ 
-                    color: option.color, 
-                    mb: 2,
-                    display: 'flex',
-                    justifyContent: 'center'
-                  }}
-                >
+                <Box sx={{ mb: 2 }}>
                   {option.icon}
                 </Box>
-                <Typography variant="h6" component="h3" gutterBottom>
-                  {option.title}                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flexGrow: 1 }}>
+                <Typography variant="h5" component="h3" fontWeight="bold">
+                  {option.title}
+                </Typography>
+                <Chip 
+                  label={option.type}
+                  size="small"
+                  sx={{ 
+                    mt: 1,
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    '& .MuiChip-label': {
+                      fontWeight: 'bold'
+                    }
+                  }}
+                />
+              </Box>
+              
+              {/* Contenido */}
+              <Box sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <Typography 
+                  variant="body1" 
+                  color="text.secondary" 
+                  sx={{ mb: 3, flexGrow: 1, lineHeight: 1.6 }}
+                >
                   {option.description}
                 </Typography>
+                
                 <Button 
-                  variant="outlined" 
-                  sx={{ color: option.color, borderColor: option.color }}
-                  onClick={() => onSelectOption(option.id)}
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  sx={{
+                    background: option.gradient,
+                    borderRadius: 2,
+                    py: 1.5,
+                    fontWeight: 'bold',
+                    textTransform: 'none',
+                    '&:hover': {
+                      background: option.color,
+                      transform: 'scale(1.02)'
+                    }
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectOption(option.id);
+                  }}
                 >
-                  Seleccionar
+                  Conectar a {option.title}
                 </Button>
-              </Paper>
+              </Box>
+            </Paper>
           ))}
         </Box>
-      </Box>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 
