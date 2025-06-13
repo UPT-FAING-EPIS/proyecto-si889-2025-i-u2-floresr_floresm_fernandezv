@@ -146,7 +146,7 @@ El equipo de desarrollo estará conformado por un grupo reducido de 2 a 3 person
 
 ## 3.1. Vista de Caso de uso
 ### 3.1.1. Diagramas de Casos de uso
-> *<Diagrama a ser insertado aquí>*
+![./media/Diagrama_casos_uso.png](./media/Diagrama_casos_uso.png)
 
 ## 3.2. Vista Lógica
 ### 3.2.1. Diagrama de Subsistemas (paquetes)
