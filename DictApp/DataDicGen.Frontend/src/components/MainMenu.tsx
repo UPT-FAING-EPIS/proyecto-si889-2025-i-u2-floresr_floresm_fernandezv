@@ -3,65 +3,57 @@ import {
   Container, Box, Paper, Typography, Button
 } from '@mui/material';
 import StorageIcon from '@mui/icons-material/Storage';
-import DescriptionIcon from '@mui/icons-material/Description';
-import SettingsIcon from '@mui/icons-material/Settings';
+import MemoryIcon from '@mui/icons-material/Memory';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
 
 interface MainMenuProps {
   onSelectOption: (option: string) => void;
 }
 
-const MainMenu: React.FC<MainMenuProps> = ({ onSelectOption }) => {
-  // Opciones del menú principal
+const MainMenu: React.FC<MainMenuProps> = ({ onSelectOption }) => {  // Opciones del menú principal
   const menuOptions = [
     {
       id: 'sql',
       title: 'SQL Server',
-      description: 'Generar diccionario de datos desde SQL Server',
+      description: 'Base de datos relacional de Microsoft',
       icon: <StorageIcon fontSize="large" />,
       color: '#1976d2'
     },
     {
       id: 'mysql',
       title: 'MySQL',
-      description: 'Generar diccionario de datos desde MySQL',
+      description: 'Base de datos relacional open source',
       icon: <StorageIcon fontSize="large" />,
       color: '#388e3c'
     },
     {
-      id: 'option2',
-      title: 'Opción 2',
-      description: 'Funcionalidad pendiente por definir',
-      icon: <DescriptionIcon fontSize="large" />,
-      color: '#f50057'
-    },
-    {
-      id: 'option3',
-      title: 'Opción 3',
-      description: 'Funcionalidad pendiente por definir',
-      icon: <AccountTreeIcon fontSize="large" />,
-      color: '#9c27b0'
-    },
-    {
-      id: 'option4',
-      title: 'Opción 4',
-      description: 'Funcionalidad pendiente por definir',
-      icon: <SettingsIcon fontSize="large" />,
-      color: '#ff9800'
-    },
-    {
       id: 'postgres',
       title: 'PostgreSQL',
-      description: 'Generar diccionario de datos desde PostgreSQL',
+      description: 'Base de datos relacional avanzada',
       icon: <StorageIcon fontSize="large" />,
       color: '#ff7043'
     },
     {
       id: 'mongo',
       title: 'MongoDB',
-      description: 'Generar diccionario de datos desde MongoDB',
-      icon: <StorageIcon fontSize="large" />,
+      description: 'Base de datos NoSQL orientada a documentos',
+      icon: <AccountTreeIcon fontSize="large" />,
       color: '#26a69a'
+    },
+    {
+      id: 'redis',
+      title: 'Redis',
+      description: 'Base de datos en memoria clave-valor',
+      icon: <MemoryIcon fontSize="large" />,
+      color: '#e53e3e'
+    },
+    {
+      id: 'cassandra',
+      title: 'Cassandra',
+      description: 'Base de datos NoSQL orientada a columnas',
+      icon: <ViewModuleIcon fontSize="large" />,
+      color: '#9c27b0'
     }
   ];
 

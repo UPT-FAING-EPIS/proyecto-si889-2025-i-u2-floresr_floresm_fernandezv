@@ -8,19 +8,24 @@ namespace DataDicGen.WebAPI.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 public class MetadataController : ControllerBase
-{
-    private readonly IDatabaseMetadataService _metadataService;
+{    private readonly IDatabaseMetadataService _metadataService;
     private readonly IDocumentGenerator _documentGenerator;
     private readonly ICredentialsCacheService _credentialsCache;
+    private readonly RedisDatabaseMetadataService _redisService;
+    private readonly CassandraDatabaseMetadataService _cassandraService;
 
     public MetadataController(
         IDatabaseMetadataService metadataService,
         IDocumentGenerator documentGenerator,
-        ICredentialsCacheService credentialsCache)
+        ICredentialsCacheService credentialsCache,
+        RedisDatabaseMetadataService redisService,
+        CassandraDatabaseMetadataService cassandraService)
     {
         _metadataService = metadataService;
         _documentGenerator = documentGenerator;
         _credentialsCache = credentialsCache;
+        _redisService = redisService;
+        _cassandraService = cassandraService;
     }
 
     /// <summary>
@@ -229,6 +234,36 @@ public class MetadataController : ControllerBase
         catch (Exception ex)
         {
             return BadRequest($"Error generando preview MongoDB: {ex.Message}");
+        }
+    }    /// <summary>
+    /// Genera vista previa editable del diccionario para Redis
+    /// </summary>
+    [HttpPost("redis/generate-preview")]
+    public async Task<ActionResult<DatabasePreviewDto>> GeneratePreviewRedis([FromBody] DatabaseConnectionDto dto)
+    {
+        try
+        {
+            var preview = await _redisService.GeneratePreviewAsync(dto);
+            return Ok(preview);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error generando preview Redis: {ex.Message}");
+        }
+    }    /// <summary>
+    /// Genera vista previa editable del diccionario para Cassandra
+    /// </summary>
+    [HttpPost("cassandra/generate-preview")]
+    public async Task<ActionResult<DatabasePreviewDto>> GeneratePreviewCassandra([FromBody] DatabaseConnectionDto dto)
+    {
+        try
+        {
+            var preview = await _cassandraService.GeneratePreviewAsync(dto);
+            return Ok(preview);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest($"Error generando preview Cassandra: {ex.Message}");
         }
     }
 }

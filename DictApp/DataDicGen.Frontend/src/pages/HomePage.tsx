@@ -2,34 +2,54 @@ import React, { useState } from 'react';
 import { Box, Button, AppBar, Toolbar, Typography, IconButton, Container } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LoginForm from '../components/LoginForm';
+import RegisterForm from '../components/RegisterForm';
 import MainMenu from '../components/MainMenu';
 import SqlConnectionForm from '../components/SqlConnectionForm';
 import MySqlConnectionForm from '../components/MySqlConnectionForm';
 import PostgresConnectionForm from '../components/PostgresConnectionForm';
 import MongoConnectionForm from '../components/MongoConnectionForm';
+import RedisConnectionForm from '../components/RedisConnectionForm';
+import CassandraConnectionForm from '../components/CassandraConnectionForm';
 import { DatabasePreview } from '../components/DatabasePreview';
-import { apiService } from '../services/api-service'; // ⬅️ Agregar import
+import { apiService } from '../services/api-service';
 
 enum AppScreen {
   LOGIN,
+  REGISTER,
   MAIN_MENU,
   SQL_CONNECTION,
   MYSQL_CONNECTION,
   POSTGRES_CONNECTION,
-  MONGO_CONNECTION, // <-- NUEVO
-  DATABASE_PREVIEW // ⬅️ Agregar nueva pantalla
+  MONGO_CONNECTION,
+  REDIS_CONNECTION,
+  CASSANDRA_CONNECTION,
+  DATABASE_PREVIEW
 }
 
-const HomePage: React.FC = () => {  // Estado para controlar qué pantalla mostrar
+const HomePage: React.FC = () => {
+  // Estado para controlar qué pantalla mostrar
   const [currentScreen, setCurrentScreen] = useState<AppScreen>(AppScreen.LOGIN);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [previewData, setPreviewData] = useState<any>(null); // ⬅️ Agregar estado para preview
-  const [databaseType, setDatabaseType] = useState<'mysql' | 'postgresql' | 'mongodb' | 'sqlserver'>('mysql');
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);  const [previewData, setPreviewData] = useState<any>(null);
+  const [databaseType, setDatabaseType] = useState<'mysql' | 'postgresql' | 'mongodb' | 'sqlserver' | 'redis' | 'cassandra'>('mysql');
   
   // Manejar el éxito del login
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
     setCurrentScreen(AppScreen.MAIN_MENU);
+  };
+
+  // Manejar el éxito del registro
+  const handleRegisterSuccess = () => {
+    setCurrentScreen(AppScreen.LOGIN);
+  };
+
+  // Cambiar entre login y registro
+  const handleSwitchToRegister = () => {
+    setCurrentScreen(AppScreen.REGISTER);
+  };
+
+  const handleSwitchToLogin = () => {
+    setCurrentScreen(AppScreen.LOGIN);
   };
   
   // Manejar selección de opción en el menú principal
@@ -47,6 +67,12 @@ const HomePage: React.FC = () => {  // Estado para controlar qué pantalla mostr
       case 'mongo':
         setCurrentScreen(AppScreen.MONGO_CONNECTION);
         break;
+      case 'redis':
+        setCurrentScreen(AppScreen.REDIS_CONNECTION);
+        break;
+      case 'cassandra':
+        setCurrentScreen(AppScreen.CASSANDRA_CONNECTION);
+        break;
       default:
         alert(`Opción "${option}" - Funcionalidad no implementada aún`);
     }
@@ -59,19 +85,22 @@ const handleGoBack = () => {
       setPreviewData(null);
     } else if (currentScreen === AppScreen.SQL_CONNECTION) {
       setCurrentScreen(AppScreen.MAIN_MENU);
+    } else if (currentScreen === AppScreen.REGISTER) {
+      setCurrentScreen(AppScreen.LOGIN);
     } else if (currentScreen === AppScreen.MAIN_MENU && isLoggedIn) {
       if (confirm('¿Está seguro que desea cerrar sesión?')) {
         setIsLoggedIn(false);
         setCurrentScreen(AppScreen.LOGIN);
       }
-    }
-  };
+    }  };
   
   // Titulo de la página según la pantalla actual
- const getPageTitle = (): string => {
+  const getPageTitle = (): string => {
     switch (currentScreen) {
       case AppScreen.LOGIN:
         return 'DataDicGen - Login';
+      case AppScreen.REGISTER:
+        return 'DataDicGen - Registro';
       case AppScreen.MAIN_MENU:
         return 'DataDicGen - Menú Principal';
       case AppScreen.SQL_CONNECTION:
@@ -91,7 +120,9 @@ const handleGoBack = () => {
 const renderCurrentScreen = () => {
     switch (currentScreen) {
       case AppScreen.LOGIN:
-        return <LoginForm onLoginSuccess={handleLoginSuccess} />;
+        return <LoginForm onLoginSuccess={handleLoginSuccess} onSwitchToRegister={handleSwitchToRegister} />;
+      case AppScreen.REGISTER:
+        return <RegisterForm onRegisterSuccess={handleRegisterSuccess} onSwitchToLogin={handleSwitchToLogin} />;
       case AppScreen.MAIN_MENU:
         return <MainMenu onSelectOption={handleOptionSelect} />;
       case AppScreen.SQL_CONNECTION:
@@ -101,7 +132,12 @@ const renderCurrentScreen = () => {
       case AppScreen.POSTGRES_CONNECTION:
         return <PostgresConnectionForm onPreviewGenerated={handlePreviewGenerated} />;
       case AppScreen.MONGO_CONNECTION:
-        return <MongoConnectionForm onPreviewGenerated={handlePreviewGenerated} />;      case AppScreen.DATABASE_PREVIEW:
+        return <MongoConnectionForm onPreviewGenerated={handlePreviewGenerated} />;
+      case AppScreen.REDIS_CONNECTION:
+        return <RedisConnectionForm onPreviewGenerated={handlePreviewGenerated} />;
+      case AppScreen.CASSANDRA_CONNECTION:
+        return <CassandraConnectionForm onPreviewGenerated={handlePreviewGenerated} />;
+      case AppScreen.DATABASE_PREVIEW:
         return previewData ? (
           <DatabasePreview
             preview={previewData}
@@ -110,10 +146,11 @@ const renderCurrentScreen = () => {
             databaseType={databaseType} // <-- Pasamos el tipo de BD
           />
         ) : <div>Cargando preview...</div>;
-      default:
-        return <div>Pantalla no encontrada</div>;
+      default:        return <div>Pantalla no encontrada</div>;
     }
-  };   const handlePreviewGenerated = (data: any, dbType: 'mysql' | 'postgresql' | 'mongodb' | 'sqlserver' = 'mysql') => {
+  };
+
+  const handlePreviewGenerated = (data: any, dbType: 'mysql' | 'postgresql' | 'mongodb' | 'sqlserver' | 'redis' | 'cassandra' = 'mysql') => {
     setPreviewData(data);
     setDatabaseType(dbType);
     setCurrentScreen(AppScreen.DATABASE_PREVIEW);
@@ -129,18 +166,17 @@ const renderCurrentScreen = () => {
       a.download = 'diccionario-datos.pdf';
       a.click();
       window.URL.revokeObjectURL(url);
-      
-    } catch (error) {
+        } catch (error) {
       console.error('Error:', error);
       alert('Error al exportar PDF');
     }
   };
 
-
   const handleBackFromPreview = () => {
     setCurrentScreen(AppScreen.SQL_CONNECTION);
     setPreviewData(null);
   };
+
   return (
     <Box 
       sx={{ 
@@ -152,8 +188,18 @@ const renderCurrentScreen = () => {
       }}
     >
       <AppBar position="static">
-        <Toolbar>
-          {currentScreen !== AppScreen.LOGIN && (
+        <Toolbar>          {currentScreen !== AppScreen.LOGIN && currentScreen !== AppScreen.REGISTER && (
+            <IconButton
+              edge="start"
+              color="inherit"
+              aria-label="back"
+              onClick={handleGoBack}
+              sx={{ mr: 2 }}
+            >
+              <ArrowBackIcon />
+            </IconButton>
+          )}
+          {currentScreen === AppScreen.REGISTER && (
             <IconButton
               edge="start"
               color="inherit"

@@ -5,6 +5,14 @@ export interface DatabaseConnectionDto {
   password: string;
   port?: number; // Puerto opcional
   authSource?: string; // Campo opcional para soportar la autenticación personalizada en MongoDB
+  
+  // Propiedades específicas para Cassandra
+  keyspace?: string;      // Para Cassandra
+  dataCenter?: string;    // Para Cassandra
+  
+  // Propiedades específicas para Redis
+  redisDatabase?: number; // Para Redis (número de BD)
+  useSsl?: boolean;       // Para Redis/otros
 }
 
 export interface ConnectionResponseDto {

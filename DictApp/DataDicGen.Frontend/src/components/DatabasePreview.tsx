@@ -36,7 +36,7 @@ interface DatabasePreviewProps {
   preview: any;
   onExport: (data: any) => Promise<void>;
   onBack: () => void;
-  databaseType?: 'mysql' | 'postgresql' | 'mongodb' | 'sqlserver';
+  databaseType?: 'mysql' | 'postgresql' | 'mongodb' | 'sqlserver' | 'redis' | 'cassandra';
 }
 
 interface TabPanelProps {

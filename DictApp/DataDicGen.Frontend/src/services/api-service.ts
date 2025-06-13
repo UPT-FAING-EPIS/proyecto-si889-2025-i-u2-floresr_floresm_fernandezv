@@ -39,8 +39,57 @@ export const apiService = {
         // Algo pasó al configurar la request
         console.error('Error config:', error.message);
       }
+        return false;
+    }
+  },
+
+  // Registrar nuevo usuario
+  async register(username: string, password: string): Promise<{ success: boolean; message: string; userId?: number }> {
+    try {
+      console.log('Intentando registro con:', { username, apiUrl: API_URL });
       
-      return false;
+      const response = await apiClient.post('/Auth/register', {
+        username,
+        password
+      });
+      
+      console.log('Respuesta del registro:', response.status, response.data);
+      
+      if (response.status === 201) {
+        return {
+          success: true,
+          message: response.data.message || 'Usuario registrado exitosamente',
+          userId: response.data.userId
+        };
+      }
+      
+      return {
+        success: false,
+        message: 'Error inesperado en el registro'
+      };
+    } catch (error: any) {
+      console.error('Error de registro:', error);
+      
+      let errorMessage = 'Error de registro';
+      
+      if (error.response) {
+        // El servidor respondió con un código de error
+        console.error('Error response:', error.response.status, error.response.data);
+        errorMessage = error.response.data?.message || `Error ${error.response.status}`;
+      } else if (error.request) {
+        // La request se hizo pero no se recibió respuesta
+        console.error('Error request:', error.request);
+        errorMessage = 'No se pudo conectar con el servidor';
+      } else {
+        // Algo pasó al configurar la request
+        console.error('Error config:', error.message);
+        errorMessage = error.message;
+      }
+      
+      return {
+        success: false,
+        message: errorMessage
+      };
     }
   },
 
@@ -138,5 +187,51 @@ export const apiService = {
   async generatePreviewMongo(credentials: DatabaseConnectionDto): Promise<any> {
     const response = await apiClient.post('/Metadata/mongo/generate-preview', credentials);
     return response.data;
+  },
+
+  // Generar vista previa editable del diccionario para Redis
+  async generatePreviewRedis(credentials: DatabaseConnectionDto): Promise<any> {
+    try {
+      console.log('Enviando datos Redis:', credentials);
+      const response = await apiClient.post('/Metadata/redis/generate-preview', credentials);
+      console.log('Respuesta Redis exitosa:', response.status, response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error Redis completo:', error);
+      
+      if (error.response) {
+        console.error('Error Redis response:', error.response.status, error.response.data);
+        console.error('Headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('Error Redis request:', error.request);
+      } else {
+        console.error('Error Redis config:', error.message);
+      }
+      
+      throw error;
+    }
+  },
+
+  // Generar vista previa editable del diccionario para Cassandra
+  async generatePreviewCassandra(credentials: DatabaseConnectionDto): Promise<any> {
+    try {
+      console.log('Enviando datos Cassandra:', credentials);
+      const response = await apiClient.post('/Metadata/cassandra/generate-preview', credentials);
+      console.log('Respuesta Cassandra exitosa:', response.status, response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error Cassandra completo:', error);
+      
+      if (error.response) {
+        console.error('Error Cassandra response:', error.response.status, error.response.data);
+        console.error('Headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('Error Cassandra request:', error.request);
+      } else {
+        console.error('Error Cassandra config:', error.message);
+      }
+      
+      throw error;
+    }
   },
 };
