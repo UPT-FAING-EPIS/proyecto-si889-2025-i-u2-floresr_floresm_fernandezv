@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { 
   Box, Button, Card, CardContent, TextField, Typography, 
-  CircularProgress, Alert, Link
+  CircularProgress, Alert, Link, Avatar
 } from '@mui/material';
+import { PersonAdd as PersonAddIcon } from '@mui/icons-material';
 import { apiService } from '../services/api-service';
 
 interface RegisterFormProps {
@@ -100,23 +101,73 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
     } finally {
       setLoading(false);
     }
-  };
-
-  return (
-    <Card variant="outlined" sx={{ maxWidth: 400, mx: 'auto', mt: 8 }}>
-      <CardContent>
-        <Typography variant="h5" component="h2" gutterBottom align="center">
-          Registrarse
-        </Typography>
-        
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+  };  return (
+    <Box 
+      sx={{ 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        margin: 0,
+        padding: 0
+      }}
+    >      <Card 
+        variant="outlined" 
+        className="fade-in"
+        sx={{ 
+          width: '100%',
+          maxWidth: 450, 
+          mx: { xs: 2, sm: 0 }, // Solo margen en móviles
+          borderRadius: 3,
+          boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+          backdropFilter: 'blur(10px)',
+          background: 'rgba(255, 255, 255, 0.95)'
+        }}
+      >
+        <CardContent sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>            <Avatar sx={{ 
+              m: 0.5, 
+              bgcolor: 'secondary.main',
+              width: 48,
+              height: 48,
+              mb: 1.5
+            }}>
+              <PersonAddIcon fontSize="large" />
+            </Avatar>
+            <Typography variant="h4" component="h1" fontWeight="bold" color="primary.main">
+              Crear Cuenta
+            </Typography>
+            <Typography variant="body2" color="text.secondary" textAlign="center" mt={1}>
+              Únete a DataDicGen
+            </Typography>
+          </Box>
+          {error && (
+          <Alert 
+            severity="error" 
+            sx={{ 
+              mb: 2,
+              borderRadius: 2,
+              '& .MuiAlert-icon': {
+                fontSize: '1.2rem'
+              }
+            }}
+          >
             {error}
           </Alert>
         )}
         
         {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
+          <Alert 
+            severity="success" 
+            sx={{ 
+              mb: 2,
+              borderRadius: 2,
+              '& .MuiAlert-icon': {
+                fontSize: '1.2rem'
+              }
+            }}
+          >
             {success}
           </Alert>
         )}
@@ -130,7 +181,16 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
             fullWidth
             margin="normal"
             required
-            helperText="Mínimo 3 caracteres"
+            variant="outlined"            helperText="Mínimo 3 caracteres"
+            sx={{
+              mb: 1.5,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '&:hover fieldset': {
+                  borderColor: 'primary.main',
+                },
+              }
+            }}
           />
           <TextField
             label="Contraseña"
@@ -141,7 +201,16 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
             fullWidth
             margin="normal"
             required
-            helperText="Mínimo 6 caracteres"
+            variant="outlined"            helperText="Mínimo 6 caracteres"
+            sx={{
+              mb: 1.5,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '&:hover fieldset': {
+                  borderColor: 'primary.main',
+                },
+              }
+            }}
           />
           <TextField
             label="Confirmar Contraseña"
@@ -152,40 +221,78 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
             fullWidth
             margin="normal"
             required
-            helperText="Debe coincidir con la contraseña"
+            variant="outlined"            helperText="Debe coincidir con la contraseña"
+            sx={{
+              mb: 2,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '&:hover fieldset': {
+                  borderColor: 'primary.main',
+                },
+              }
+            }}
           />
           
-          <Box sx={{ mt: 3 }}>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={loading}
-              fullWidth
-            >
-              {loading ? <CircularProgress size={24} /> : 'Registrarse'}
-            </Button>
-          </Box>
-          
-          <Box sx={{ mt: 2, textAlign: 'center' }}>
-            <Typography variant="body2">
-              ¿Ya tienes una cuenta?{' '}
-              <Link
-                component="button"
-                variant="body2"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onSwitchToLogin();
-                }}
-                sx={{ cursor: 'pointer' }}
-              >
-                Iniciar Sesión
-              </Link>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={loading}
+            fullWidth
+            size="large"
+            sx={{
+              py: 1.5,
+              borderRadius: 2,
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              textTransform: 'none',
+              background: 'linear-gradient(45deg, #FF6B6B 30%, #FF8E8E 90%)',
+              boxShadow: '0 3px 15px rgba(255, 107, 107, 0.3)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #FF5252 30%, #FF7979 90%)',
+                boxShadow: '0 5px 20px rgba(255, 107, 107, 0.4)',
+              },
+              '&:disabled': {
+                background: 'rgba(0, 0, 0, 0.12)',
+              }
+            }}
+          >
+            {loading ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CircularProgress size={20} color="inherit" />
+                <span>Registrando...</span>
+              </Box>
+            ) : (
+              'Crear Cuenta'
+            )}
+          </Button>          
+          <Box sx={{ mt: 2.5, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              ¿Ya tienes una cuenta?
             </Typography>
+            <Link
+              component="button"
+              variant="body2"
+              onClick={(e) => {
+                e.preventDefault();
+                onSwitchToLogin();
+              }}
+              sx={{ 
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                textDecoration: 'none',
+                color: 'primary.main',
+                '&:hover': {
+                  textDecoration: 'underline',
+                }
+              }}
+            >
+              Iniciar Sesión
+            </Link>
           </Box>
         </form>
       </CardContent>
     </Card>
+    </Box>
   );
 };
 

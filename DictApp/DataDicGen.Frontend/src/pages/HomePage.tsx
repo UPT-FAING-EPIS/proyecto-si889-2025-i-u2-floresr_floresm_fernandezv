@@ -176,7 +176,6 @@ const renderCurrentScreen = () => {
     setCurrentScreen(AppScreen.SQL_CONNECTION);
     setPreviewData(null);
   };
-
   return (
     <Box 
       sx={{ 
@@ -187,7 +186,14 @@ const renderCurrentScreen = () => {
         overflow: 'hidden' 
       }}
     >
-      <AppBar position="static">
+      {currentScreen !== AppScreen.LOGIN && currentScreen !== AppScreen.REGISTER && (
+        <AppBar 
+          position="static"
+          sx={{
+            background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+            boxShadow: '0 3px 15px rgba(33, 203, 243, 0.3)'
+          }}
+        >
         <Toolbar>          {currentScreen !== AppScreen.LOGIN && currentScreen !== AppScreen.REGISTER && (
             <IconButton
               edge="start"
@@ -212,24 +218,30 @@ const renderCurrentScreen = () => {
           )}
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {getPageTitle()}
-          </Typography>
-          {isLoggedIn && (
+          </Typography>          {isLoggedIn && (
             <Button 
               color="inherit" 
+              variant="outlined"
               onClick={() => {
                 if (confirm('¿Está seguro que desea cerrar sesión?')) {
                   setIsLoggedIn(false);
                   setCurrentScreen(AppScreen.LOGIN);
                 }
               }}
+              sx={{
+                borderColor: 'rgba(255,255,255,0.5)',
+                '&:hover': {
+                  borderColor: 'white',
+                  backgroundColor: 'rgba(255,255,255,0.1)'
+                }
+              }}
             >
               Cerrar Sesión
-            </Button>
-          )}
+            </Button>          )}
         </Toolbar>
       </AppBar>
-      
-      <Box 
+      )}
+        <Box
         component="main" 
         sx={{ 
           flexGrow: 1, 
@@ -237,27 +249,28 @@ const renderCurrentScreen = () => {
           flexDirection: 'column',
           width: '100%',
           overflow: 'auto',
-          p: 2
+          p: currentScreen !== AppScreen.LOGIN && currentScreen !== AppScreen.REGISTER && currentScreen !== AppScreen.MAIN_MENU ? 2 : 0
         }}
       >
         {renderCurrentScreen()}
-      </Box>
-      
-      <Box 
-        component="footer" 
-        sx={{ 
-          py: 2, 
-          px: 2, 
-          backgroundColor: (theme) => theme.palette.grey[200],
-          width: '100%'
-        }}
-      >
-        <Container maxWidth="sm">
-          <Typography variant="body2" color="text.secondary" align="center">
-            © {new Date().getFullYear()} DataDicGen - Generador de Diccionario de Datos
-          </Typography>
-        </Container>
-      </Box>
+      </Box>      
+      {currentScreen !== AppScreen.LOGIN && currentScreen !== AppScreen.REGISTER && (
+        <Box 
+          component="footer" 
+          sx={{ 
+            py: 2, 
+            px: 2, 
+            backgroundColor: (theme) => theme.palette.grey[200],
+            width: '100%'
+          }}
+        >
+          <Container maxWidth="sm">
+            <Typography variant="body2" color="text.secondary" align="center">
+              © {new Date().getFullYear()} DataDicGen - Generador de Diccionario de Datos
+            </Typography>
+          </Container>
+        </Box>
+      )}
     </Box>
   );
 };
