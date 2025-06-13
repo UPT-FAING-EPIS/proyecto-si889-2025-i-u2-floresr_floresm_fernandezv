@@ -18,9 +18,9 @@ public class ColumnSchemaDto
     public string DataType { get; set; }
     public bool IsNullable { get; set; }
     public int? MaxLength { get; set; }
-
+    
     public bool IsPrimaryKey { get; set; }  // 👈 nuevo
     public bool IsForeignKey { get; set; }  // 👈 nuevo
-
     public string? Description { get; set; } = ""; // ← descripción IA
+    public string? DefaultValue { get; set; } = ""; // Para información adicional (Redis, Cassandra)
 }

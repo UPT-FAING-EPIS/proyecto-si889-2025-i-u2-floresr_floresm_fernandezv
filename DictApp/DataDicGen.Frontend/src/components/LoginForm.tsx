@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { 
   Box, Button, Card, CardContent, TextField, Typography, 
-  CircularProgress, Alert 
+  CircularProgress, Alert, Link 
 } from '@mui/material';
 import { apiService } from '../services/api-service';
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
+  onSwitchToRegister: () => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onSwitchToRegister }) => {
   // Estado para los datos del formulario
   const [loginData, setLoginData] = useState({
     username: '',
@@ -91,8 +92,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
             margin="normal"
             required
           />
-          
-          <Box sx={{ mt: 3 }}>
+            <Box sx={{ mt: 3 }}>
             <Button
               type="submit"
               variant="contained"
@@ -102,6 +102,23 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
             >
               {loading ? <CircularProgress size={24} /> : 'Iniciar Sesión'}
             </Button>
+          </Box>
+          
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Typography variant="body2">
+              ¿No tienes una cuenta?{' '}
+              <Link
+                component="button"
+                variant="body2"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSwitchToRegister();
+                }}
+                sx={{ cursor: 'pointer' }}
+              >
+                Registrarse
+              </Link>
+            </Typography>
           </Box>
         </form>
       </CardContent>

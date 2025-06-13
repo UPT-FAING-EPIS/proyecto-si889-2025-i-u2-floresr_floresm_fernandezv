@@ -6,4 +6,12 @@ public class DatabaseConnectionDto
     public string Password { get; set; }       // Contraseña
     public int? Port { get; set; }             // Puerto personalizado (opcional)
     public string? AuthSource { get; set; } = "admin"; // Para MongoDB
+    
+    // Propiedades específicas para Cassandra
+    public string? Keyspace { get; set; }      // Para Cassandra
+    public string? DataCenter { get; set; }    // Para Cassandra
+    
+    // Propiedades específicas para Redis
+    public int? RedisDatabase { get; set; } = 0; // Para Redis (número de BD)
+    public bool UseSsl { get; set; } = false;    // Para Redis/otros
 }

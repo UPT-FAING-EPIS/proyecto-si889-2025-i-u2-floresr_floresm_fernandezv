@@ -56,6 +56,10 @@ builder.Services.AddScoped<IDatabaseMetadataService, DatabaseMetadataService>();
 builder.Services.AddScoped<IDocumentGenerator, DocumentGenerator>();
 builder.Services.AddSingleton<ICredentialsCacheService, CredentialsCacheService>(); // Nuevo servicio de caché
 
+// Registrar servicios específicos de NoSQL
+builder.Services.AddScoped<RedisDatabaseMetadataService>();
+builder.Services.AddScoped<CassandraDatabaseMetadataService>();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 

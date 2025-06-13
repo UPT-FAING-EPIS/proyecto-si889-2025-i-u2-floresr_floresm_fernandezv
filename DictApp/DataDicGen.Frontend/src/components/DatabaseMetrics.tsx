@@ -34,7 +34,7 @@ import {
 
 interface DatabaseMetrics {
   tables: any[];
-  databaseType?: 'mysql' | 'postgresql' | 'mongodb' | 'sqlserver'; // Tipo de BD
+  databaseType?: 'mysql' | 'postgresql' | 'mongodb' | 'sqlserver' | 'redis' | 'cassandra'; // Tipo de BD
 }
 
 interface MetricCardProps {
@@ -74,7 +74,7 @@ const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#e91e63', '#9c27b0'
 
 export const DatabaseMetrics: React.FC<DatabaseMetrics> = ({ tables, databaseType = 'mysql' }) => {  const metrics = useMemo(() => {
     // Detectar tipo de BD si no se especifica
-    const isNoSQL = databaseType === 'mongodb';
+    const isNoSQL = ['mongodb', 'redis', 'cassandra'].includes(databaseType);
     const isRelational = ['mysql', 'postgresql', 'sqlserver'].includes(databaseType);
     
     // Métricas básicas
@@ -88,11 +88,23 @@ export const DatabaseMetrics: React.FC<DatabaseMetrics> = ({ tables, databaseTyp
     
     const totalForeignKeys = isRelational ? tables.reduce((sum, table) => 
       sum + (table.columns?.filter((col: any) => col.isForeignKey).length || 0), 0
+    ) : 0;    // Para MongoDB, contamos documentos únicos con _id
+    const totalDocumentIds = databaseType === 'mongodb' ? tables.reduce((sum, table) => 
+      sum + (table.columns?.filter((col: any) => col.columnName === '_id').length || 0), 0
     ) : 0;
 
-    // Para MongoDB, contamos documentos únicos con _id
-    const totalDocumentIds = isNoSQL ? tables.reduce((sum, table) => 
-      sum + (table.columns?.filter((col: any) => col.columnName === '_id').length || 0), 0
+    // Para Redis, contamos tipos de datos específicos
+    const totalRedisKeys = databaseType === 'redis' ? tables.reduce((sum, table) => 
+      sum + (table.columns?.length || 0), 0
+    ) : 0;
+
+    // Para Cassandra, contamos partition keys y clustering keys
+    const totalPartitionKeys = databaseType === 'cassandra' ? tables.reduce((sum, table) => 
+      sum + (table.columns?.filter((col: any) => col.defaultValue === 'partition_key').length || 0), 0
+    ) : 0;
+
+    const totalClusteringKeys = databaseType === 'cassandra' ? tables.reduce((sum, table) => 
+      sum + (table.columns?.filter((col: any) => col.defaultValue === 'clustering').length || 0), 0
     ) : 0;
 
     // Análisis de tipos de datos
@@ -163,14 +175,15 @@ export const DatabaseMetrics: React.FC<DatabaseMetrics> = ({ tables, databaseTyp
     
     const totalArrayFields = isNoSQL ? tables.reduce((sum, table) => 
       sum + (table.columns?.filter((col: any) => col.dataType?.toLowerCase().includes('array')).length || 0), 0
-    ) : 0;
-
-    return {
+    ) : 0;    return {
       totalTables,
       totalColumns,
       totalPrimaryKeys,
       totalForeignKeys,
       totalDocumentIds,
+      totalRedisKeys,
+      totalPartitionKeys,
+      totalClusteringKeys,
       nullableColumns,
       avgColumnsPerTable,
       tablesWithPK,
@@ -576,8 +589,7 @@ export const DatabaseMetrics: React.FC<DatabaseMetrics> = ({ tables, databaseTyp
           color="#4caf50"
           subtitle={`Promedio: ${metrics.avgColumnsPerTable} por ${metrics.isNoSQL ? 'colección' : 'tabla'}`}
         />
-        
-        {metrics.isRelational ? (
+          {metrics.isRelational ? (
           <>
             <MetricCard
               title="Claves Primarias"
@@ -594,7 +606,7 @@ export const DatabaseMetrics: React.FC<DatabaseMetrics> = ({ tables, databaseTyp
               subtitle={`${metrics.tablesWithFK} tablas con FK`}
             />
           </>
-        ) : (
+        ) : metrics.databaseType === 'mongodb' ? (
           <>
             <MetricCard
               title="IDs de Documento"
@@ -609,6 +621,56 @@ export const DatabaseMetrics: React.FC<DatabaseMetrics> = ({ tables, databaseTyp
               icon={<RelationIcon />}
               color="#e91e63"
               subtitle="Campos de tipo objeto/subdocumento"
+            />
+          </>        ) : metrics.databaseType === 'redis' ? (
+          <>
+            <MetricCard
+              title="Claves Redis"
+              value={metrics.totalRedisKeys}
+              icon={<KeyIcon />}
+              color="#ff9800"
+              subtitle="Total de claves almacenadas"
+            />
+            <MetricCard
+              title="Estructuras"
+              value={metrics.dataTypes}
+              icon={<RelationIcon />}
+              color="#e91e63"
+              subtitle="Tipos Redis (string, hash, list, etc.)"
+            />
+          </>
+        ): metrics.databaseType === 'cassandra' ? (
+          <>
+            <MetricCard
+              title="Partition Keys"
+              value={metrics.totalPartitionKeys}
+              icon={<KeyIcon />}
+              color="#ff9800"
+              subtitle="Claves de partición"
+            />
+            <MetricCard
+              title="Clustering Keys"
+              value={metrics.totalClusteringKeys}
+              icon={<RelationIcon />}
+              color="#e91e63"
+              subtitle="Claves de clustering"
+            />
+          </>
+        ) : (
+          <>
+            <MetricCard
+              title="Campos Especiales"
+              value={0}
+              icon={<KeyIcon />}
+              color="#ff9800"
+              subtitle="No detectados"
+            />
+            <MetricCard
+              title="Relaciones"
+              value={0}
+              icon={<RelationIcon />}
+              color="#e91e63"
+              subtitle="No detectadas"
             />
           </>
         )}
