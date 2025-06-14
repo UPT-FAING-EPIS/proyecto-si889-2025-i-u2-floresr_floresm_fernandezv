@@ -19,17 +19,17 @@ jobs:
       CONNECTION_STRING: ${{ secrets.CONNECTION_STRING }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-
-      # FRONTEND: Build y deploy a S3
+        uses: actions/checkout@v4      # FRONTEND: Build y deploy a S3
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 21
+          cache: 'npm'
+          cache-dependency-path: './DictApp/DataDicGen.Frontend/package-lock.json'
 
       - name: Install frontend dependencies
         working-directory: ./DictApp/DataDicGen.Frontend
-        run: npm ci
+        run: npm install --frozen-lockfile
 
       - name: Build frontend
         working-directory: ./DictApp/DataDicGen.Frontend
