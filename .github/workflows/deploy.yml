@@ -1,0 +1,75 @@
+name: Deploy Frontend & Backend
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      API_OPENAI_KEY: ${{ secrets.API_OPENAI_KEY }}
+      CONNECTION_STRING: ${{ secrets.CONNECTION_STRING }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # FRONTEND: Build y deploy a S3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend dependencies
+        working-directory: ./DataDicGen.Frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ./DataDicGen.Frontend
+        run: npm run build
+
+      - name: Deploy frontend to S3
+        uses: jakejarvis/s3-sync-action@v0.5.1
+        with:
+          args: --acl public-read --delete
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          SOURCE_DIR: ./DataDicGen.Frontend/dist
+
+      # BACKEND: Build y deploy a Elastic Beanstalk
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore backend dependencies
+        working-directory: ./DataDicGen.WebAPI
+        run: dotnet restore
+
+      - name: Publish backend
+        working-directory: ./DataDicGen.WebAPI
+        run: dotnet publish -c Release -o publish
+
+      - name: Zip backend artifact
+        working-directory: ./DataDicGen.WebAPI/publish
+        run: zip -r ../backend.zip .
+
+      - name: Deploy backend to Elastic Beanstalk
+        uses: einaregilsson/beanstalk-deploy@v21
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: datadicgen-backend
+          environment_name: datadicgen-backend-env
+          region: ${{ secrets.AWS_REGION }}
+          version_label: github-${{ github.run_number }}
+          deployment_package: ./DataDicGen.WebAPI/backend.zip
+
+      # Puedes agregar más variables de entorno o secrets según tus necesidades

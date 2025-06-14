@@ -1,0 +1,32 @@
+name: Package Project
+
+on:
+  workflow_dispatch:
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Frontend
+        working-directory: ./DataDicGen.Frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Backend
+        working-directory: ./DataDicGen.WebAPI
+        run: |
+          dotnet restore
+          dotnet publish -c Release -o publish
+
+      - name: Zip Backend
+        working-directory: ./DataDicGen.WebAPI/publish
+        run: zip -r ../../backend.zip .
+
+      - name: Publish Package (ejemplo, ajusta según tu registry)
+        run: echo "Aquí iría el comando para publicar el package usando el token"
+        env:
+          TOKEN_PACKAGE: ${{ secrets.token_package }}

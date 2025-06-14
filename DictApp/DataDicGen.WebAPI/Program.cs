@@ -38,7 +38,8 @@ builder.Services.AddCors(options =>
                 "http://localhost:5173", // URL del frontend en Vite
                 "http://localhost:5174", // URL alternativa
                 "http://localhost:3000", // URL de React (por si acaso)
-                "http://localhost:3001"  // URL alternativa
+                "http://localhost:3001", // URL alternativa
+                "http://datadicgen-frontend-mario-20250613045210.s3-website.us-east-2.amazonaws.com" // Frontend en S3
               )
               .AllowAnyHeader()
               .AllowAnyMethod()

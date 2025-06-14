@@ -77,13 +77,42 @@ const HomePage: React.FC = () => {
         alert(`Opción "${option}" - Funcionalidad no implementada aún`);
     }
   };
-  
-  // Volver a la pantalla anterior
+    // Volver a la pantalla anterior
 const handleGoBack = () => {
     if (currentScreen === AppScreen.DATABASE_PREVIEW) {
-      setCurrentScreen(AppScreen.SQL_CONNECTION);
+      // Regresar al formulario de conexión correspondiente según el tipo de BD
+      switch (databaseType) {
+        case 'sqlserver':
+          setCurrentScreen(AppScreen.SQL_CONNECTION);
+          break;
+        case 'mysql':
+          setCurrentScreen(AppScreen.MYSQL_CONNECTION);
+          break;
+        case 'postgresql':
+          setCurrentScreen(AppScreen.POSTGRES_CONNECTION);
+          break;
+        case 'mongodb':
+          setCurrentScreen(AppScreen.MONGO_CONNECTION);
+          break;
+        case 'redis':
+          setCurrentScreen(AppScreen.REDIS_CONNECTION);
+          break;
+        case 'cassandra':
+          setCurrentScreen(AppScreen.CASSANDRA_CONNECTION);
+          break;
+        default:
+          setCurrentScreen(AppScreen.MAIN_MENU);
+      }
       setPreviewData(null);
-    } else if (currentScreen === AppScreen.SQL_CONNECTION) {
+    } else if (
+      currentScreen === AppScreen.SQL_CONNECTION ||
+      currentScreen === AppScreen.MYSQL_CONNECTION ||
+      currentScreen === AppScreen.POSTGRES_CONNECTION ||
+      currentScreen === AppScreen.MONGO_CONNECTION ||
+      currentScreen === AppScreen.REDIS_CONNECTION ||
+      currentScreen === AppScreen.CASSANDRA_CONNECTION
+    ) {
+      // Desde cualquier formulario de conexión, regresar al menú principal
       setCurrentScreen(AppScreen.MAIN_MENU);
     } else if (currentScreen === AppScreen.REGISTER) {
       setCurrentScreen(AppScreen.LOGIN);
@@ -171,9 +200,30 @@ const renderCurrentScreen = () => {
       alert('Error al exportar PDF');
     }
   };
-
   const handleBackFromPreview = () => {
-    setCurrentScreen(AppScreen.SQL_CONNECTION);
+    // Regresar al formulario de conexión correspondiente según el tipo de BD
+    switch (databaseType) {
+      case 'sqlserver':
+        setCurrentScreen(AppScreen.SQL_CONNECTION);
+        break;
+      case 'mysql':
+        setCurrentScreen(AppScreen.MYSQL_CONNECTION);
+        break;
+      case 'postgresql':
+        setCurrentScreen(AppScreen.POSTGRES_CONNECTION);
+        break;
+      case 'mongodb':
+        setCurrentScreen(AppScreen.MONGO_CONNECTION);
+        break;
+      case 'redis':
+        setCurrentScreen(AppScreen.REDIS_CONNECTION);
+        break;
+      case 'cassandra':
+        setCurrentScreen(AppScreen.CASSANDRA_CONNECTION);
+        break;
+      default:
+        setCurrentScreen(AppScreen.MAIN_MENU);
+    }
     setPreviewData(null);
   };
   return (
@@ -185,8 +235,7 @@ const renderCurrentScreen = () => {
         width: '100%',
         overflow: 'hidden' 
       }}
-    >
-      {currentScreen !== AppScreen.LOGIN && currentScreen !== AppScreen.REGISTER && (
+    >      {(currentScreen !== AppScreen.LOGIN && currentScreen !== AppScreen.REGISTER) && (
         <AppBar 
           position="static"
           sx={{
@@ -194,54 +243,47 @@ const renderCurrentScreen = () => {
             boxShadow: '0 3px 15px rgba(33, 203, 243, 0.3)'
           }}
         >
-        <Toolbar>          {currentScreen !== AppScreen.LOGIN && currentScreen !== AppScreen.REGISTER && (
-            <IconButton
-              edge="start"
-              color="inherit"
-              aria-label="back"
-              onClick={handleGoBack}
-              sx={{ mr: 2 }}
-            >
-              <ArrowBackIcon />
-            </IconButton>
-          )}
-          {currentScreen === AppScreen.REGISTER && (
-            <IconButton
-              edge="start"
-              color="inherit"
-              aria-label="back"
-              onClick={handleGoBack}
-              sx={{ mr: 2 }}
-            >
-              <ArrowBackIcon />
-            </IconButton>
-          )}
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            {getPageTitle()}
-          </Typography>          {isLoggedIn && (
-            <Button 
-              color="inherit" 
-              variant="outlined"
-              onClick={() => {
-                if (confirm('¿Está seguro que desea cerrar sesión?')) {
-                  setIsLoggedIn(false);
-                  setCurrentScreen(AppScreen.LOGIN);
-                }
-              }}
-              sx={{
-                borderColor: 'rgba(255,255,255,0.5)',
-                '&:hover': {
-                  borderColor: 'white',
-                  backgroundColor: 'rgba(255,255,255,0.1)'
-                }
-              }}
-            >
-              Cerrar Sesión
-            </Button>          )}
-        </Toolbar>
-      </AppBar>
+          <Toolbar>
+            {(currentScreen !== AppScreen.MAIN_MENU || isLoggedIn) && (
+              <IconButton
+                edge="start"
+                color="inherit"
+                aria-label="back"
+                onClick={handleGoBack}
+                sx={{ mr: 2 }}
+              >
+                <ArrowBackIcon />
+              </IconButton>
+            )}
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              {getPageTitle()}            </Typography>
+
+            {isLoggedIn && (
+              <Button 
+                color="inherit" 
+                variant="outlined"
+                onClick={() => {
+                  if (confirm('¿Está seguro que desea cerrar sesión?')) {
+                    setIsLoggedIn(false);
+                    setCurrentScreen(AppScreen.LOGIN);
+                  }
+                }}
+                sx={{
+                  borderColor: 'rgba(255,255,255,0.5)',
+                  '&:hover': {
+                    borderColor: 'white',
+                    backgroundColor: 'rgba(255,255,255,0.1)'
+                  }
+                }}
+              >
+                Cerrar Sesión
+              </Button>
+            )}
+          </Toolbar>
+        </AppBar>
       )}
-        <Box
+      
+      <Box
         component="main" 
         sx={{ 
           flexGrow: 1, 
@@ -253,7 +295,7 @@ const renderCurrentScreen = () => {
         }}
       >
         {renderCurrentScreen()}
-      </Box>      
+      </Box>
       {currentScreen !== AppScreen.LOGIN && currentScreen !== AppScreen.REGISTER && (
         <Box 
           component="footer" 

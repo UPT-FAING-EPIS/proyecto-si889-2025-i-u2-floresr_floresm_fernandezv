@@ -1,0 +1,43 @@
+name: Docs, SonarCloud & Snyk
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-docs-analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Build documentación (ajusta el directorio si usas otro generador)
+      - name: Instalar dependencias y build docs
+        working-directory: ./DataDicGen.Frontend
+        run: |
+          npm ci
+          npm run docs:build || npm run build
+
+      # Publicar en GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./DataDicGen.Frontend/dist
+
+      # SonarCloud
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.apikey_token }}
+        with:
+          projectBaseDir: .
+
+      # Snyk
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions@v4
+        env:
+          SNYK_TOKEN: ${{ secrets.api_key }}
+        with:
+          command: test
