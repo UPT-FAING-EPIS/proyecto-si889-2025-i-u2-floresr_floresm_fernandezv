@@ -1,0 +1,74 @@
+name: Terraform Plan & Infracost
+
+on:
+  workflow_dispatch:
+
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.3
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: ./terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: terraform plan -out=tfplan
+
+      - name: Upload Terraform plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: ./terraform/tfplan
+
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v2
+        with:
+          api-key: ${{ secrets.infra_token }}
+
+      - name: Run Infracost breakdown
+        run: |
+          infracost breakdown --path=./terraform --format=json --out-file=/tmp/infracost.json
+        env:
+          INFRACOST_API_KEY: ${{ secrets.infra_token }}
+
+      - name: Generar reporte de costos Markdown
+        run: |
+          infracost output --path=/tmp/infracost.json --format=md --out-file=/tmp/cost.md
+
+      - name: Generar diagrama de infraestructura
+        run: |
+          infracost output --path=/tmp/infracost.json --format=diagram --out-file=/tmp/diagram.html
+
+      - name: Subir artefactos de Infracost
+        uses: actions/upload-artifact@v4
+        with:
+          name: infracost-report
+          path: |
+            /tmp/cost.md
+            /tmp/diagram.html
+
+      - name: Añadir costos y diagrama al summary
+        run: |
+          echo '## Resumen de costos estimados' >> $GITHUB_STEP_SUMMARY
+          cat /tmp/cost.md >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo '---' >> $GITHUB_STEP_SUMMARY
+          echo '### Diagrama de infraestructura (descargar y abrir en tu navegador):' >> $GITHUB_STEP_SUMMARY
+          echo '[Descargar diagrama de infraestructura](./artifacts/infracost-report/diagram.html)' >> $GITHUB_STEP_SUMMARY

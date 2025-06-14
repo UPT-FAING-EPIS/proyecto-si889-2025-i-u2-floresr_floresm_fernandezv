@@ -1,0 +1,39 @@
+name: Release Project
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Frontend
+        working-directory: ./DataDicGen.Frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Backend
+        working-directory: ./DataDicGen.WebAPI
+        run: |
+          dotnet restore
+          dotnet publish -c Release -o publish
+
+      - name: Zip Backend
+        working-directory: ./DataDicGen.WebAPI/publish
+        run: zip -r ../../backend.zip .
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            DataDicGen.Frontend/dist/**
+            DataDicGen.WebAPI/backend.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
