@@ -1,9 +1,12 @@
 name: Deploy Frontend & Backend
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+    inputs:
+      deploy_reason:
+        description: 'Razón del deploy'
+        required: false
+        default: 'Deploy manual'
 
 jobs:
   deploy:
@@ -71,5 +74,10 @@ jobs:
           region: ${{ secrets.AWS_REGION }}
           version_label: github-${{ github.run_number }}
           deployment_package: ./DataDicGen.WebAPI/backend.zip
+          # Configurar variables de entorno en Elastic Beanstalk
+          environment_variables: |
+            ConnectionStrings__DefaultConnection=${{ secrets.CONNECTION_STRING }}
+            OpenAI__ApiKey=${{ secrets.API_OPENAI_KEY }}
+            ASPNETCORE_ENVIRONMENT=Production
 
       # Puedes agregar más variables de entorno o secrets según tus necesidades
