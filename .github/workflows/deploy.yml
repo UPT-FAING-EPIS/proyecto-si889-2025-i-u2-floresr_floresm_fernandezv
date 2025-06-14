@@ -63,11 +63,11 @@ jobs:
 
       - name: Restore backend dependencies
         working-directory: ./DictApp/DataDicGen.WebAPI
-        run: dotnet restore
-
+        run: dotnet restore      
       - name: Publish backend
         working-directory: ./DictApp/DataDicGen.WebAPI
-        run: dotnet publish -c Release -o publish      
+        run: dotnet publish -c Release -o publish
+
       - name: Zip backend artifact
         working-directory: ./DictApp/DataDicGen.WebAPI/publish
         run: zip -r ../backend.zip .
@@ -82,7 +82,8 @@ jobs:
       - name: Create Elastic Beanstalk application if not exists
         run: |
           aws elasticbeanstalk describe-applications --application-names datadicgen-backend || \
-          aws elasticbeanstalk create-application --application-name datadicgen-backend --description "Data Dictionary Generator Backend API"      - name: Deploy backend to Elastic Beanstalk
+          aws elasticbeanstalk create-application --application-name datadicgen-backend --description "Data Dictionary Generator Backend API"      
+      - name: Deploy backend to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v21
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
