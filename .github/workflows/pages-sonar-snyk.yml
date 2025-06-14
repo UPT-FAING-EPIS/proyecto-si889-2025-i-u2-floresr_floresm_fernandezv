@@ -68,7 +68,7 @@ jobs:
         run: echo "report-url=https://sonarcloud.io/project/overview?id=mario-flores_proyecto-u2" >> $GITHUB_OUTPUT
 
   snyk-analysis:
-    name: Snyk Security Analysis
+    name: Snyk .NET Security Analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -79,39 +79,28 @@ jobs:
         with:
           dotnet-version: '8.0.x'
           
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          
       - name: Install .NET dependencies
         working-directory: ./DictApp
         run: dotnet restore DataDictGen.sln
         
-      - name: Install Frontend dependencies
-        working-directory: ./DictApp/DataDicGen.Frontend
-        run: npm ci
-        
       - name: Create reports directory
         run: mkdir -p ./reports
         
-      - name: Install Snyk CLI
-        run: npm install -g snyk
-        
+      - name: Run Snyk for .NET with JSON output
+        continue-on-error: true
+        uses: snyk/actions/dotnet@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --file=./DictApp/DataDictGen.sln --format=json --json-file-output=./reports/snyk-dotnet-report.json
+          
       - name: Run Snyk for .NET with HTML output
         continue-on-error: true
+        uses: snyk/actions/dotnet@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: |
-          snyk test --file=./DictApp/DataDictGen.sln --format=html > ./reports/snyk-dotnet-report.html || true
-          
-      - name: Run Snyk for Frontend with HTML output
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: |
-          cd ./DictApp/DataDicGen.Frontend
-          snyk test --format=html > ../../reports/snyk-frontend-report.html || true
+        with:
+          args: --file=./DictApp/DataDictGen.sln --format=html --html-file-output=./reports/snyk-dotnet-report.html
           
       - name: Upload Snyk reports
         uses: actions/upload-artifact@v4
@@ -140,7 +129,11 @@ jobs:
       - name: Create reports index page
         run: |
           mkdir -p ./public
-          cat > ./public/index.html << 'EOF'
+          
+          # Get current date
+          CURRENT_DATE=$(date '+%Y-%m-%d %H:%M:%S UTC')
+          
+          cat > ./public/index.html << EOF
           <!DOCTYPE html>
           <html lang="es">
           <head>
@@ -210,38 +203,48 @@ jobs:
                       font-style: italic;
                       margin-top: 30px;
                   }
+                  .dotnet-badge {
+                      background: #5C2D91;
+                      color: white;
+                      padding: 5px 10px;
+                      border-radius: 5px;
+                      font-size: 0.8em;
+                      display: inline-block;
+                      margin-top: 10px;
+                  }
               </style>
           </head>
           <body>
               <div class="container">
                   <h1>📊 Reportes de Análisis</h1>
-                  <h2 style="text-align: center; color: #7f8c8d;">DataDictGen Project</h2>
+                  <h2 style="text-align: center; color: #7f8c8d;">DataDictGen Project (.NET)</h2>
                   
                   <div class="info">
-                      <strong>ℹ️ Información:</strong> Esta página contiene los reportes automáticos de análisis de calidad y seguridad del código.
+                      <strong>ℹ️ Información:</strong> Esta página contiene los reportes automáticos de análisis de calidad y seguridad para el proyecto .NET.
+                      <div class="dotnet-badge">.NET 8.0</div>
                   </div>
                   
                   <div class="report-card">
                       <h2>🔍 SonarCloud - Análisis de Calidad</h2>
-                      <p>Análisis completo de calidad de código, bugs, vulnerabilidades y code smells.</p>
+                      <p>Análisis completo de calidad de código, bugs, vulnerabilidades y code smells para el proyecto .NET.</p>
                       <a href="${{ needs.sonar-analysis.outputs.sonar-report-url }}" class="report-link" target="_blank">
                           📈 Ver Reporte SonarCloud
                       </a>
                   </div>
                   
                   <div class="report-card">
-                      <h2>🛡️ Snyk - Análisis de Seguridad</h2>
-                      <p>Análisis de vulnerabilidades de seguridad en dependencias.</p>
+                      <h2>🛡️ Snyk - Análisis de Seguridad .NET</h2>
+                      <p>Análisis de vulnerabilidades de seguridad en dependencias y paquetes NuGet del proyecto .NET.</p>
                       <a href="./snyk-dotnet-report.html" class="report-link">
-                          🔒 Reporte .NET
+                          🔒 Reporte HTML (.NET)
                       </a>
-                      <a href="./snyk-frontend-report.html" class="report-link">
-                          ⚛️ Reporte Frontend
+                      <a href="./snyk-dotnet-report.json" class="report-link">
+                          📄 Reporte JSON (.NET)
                       </a>
                   </div>
                   
                   <div class="timestamp">
-                      Última actualización: $(date)
+                      Última actualización: \$CURRENT_DATE
                   </div>
               </div>
           </body>
