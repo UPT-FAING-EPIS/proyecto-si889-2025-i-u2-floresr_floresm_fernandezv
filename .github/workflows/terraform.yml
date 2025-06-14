@@ -1,21 +1,31 @@
-name: Terraform Plan & Infracost
+name: 🏗️ Terraform Plan & Cost Analysis
 
 on:
   workflow_dispatch:
+    inputs:
+      action:
+        description: 'Acción a realizar'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+        - plan
+        - apply
+        - destroy
 
 jobs:
-  terraform-plan:
+  terraform:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Terraform
+      - name: 🔧 Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.8.3
 
-      - name: Terraform Init
+      - name: 🚀 Terraform Init
         working-directory: ./terraform
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -23,7 +33,7 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION }}
         run: terraform init
 
-      - name: Terraform Plan
+      - name: 📋 Terraform Plan
         working-directory: ./terraform
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -31,44 +41,89 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION }}
         run: terraform plan -out=tfplan
 
-      - name: Upload Terraform plan
+      - name: 📤 Upload Terraform plan
         uses: actions/upload-artifact@v4
         with:
-          name: tfplan
+          name: terraform-plan
           path: ./terraform/tfplan
 
-      - name: Setup Infracost
+      - name: 💰 Setup Infracost
         uses: infracost/actions/setup@v2
         with:
-          api-key: ${{ secrets.infra_token }}
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
 
-      - name: Run Infracost breakdown
+      - name: 📊 Run Infracost breakdown
+        working-directory: ./terraform
         run: |
-          infracost breakdown --path=./terraform --format=json --out-file=/tmp/infracost.json
+          infracost breakdown --path=. --format=json --out-file=/tmp/infracost.json
         env:
-          INFRACOST_API_KEY: ${{ secrets.infra_token }}
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
 
-      - name: Generar reporte de costos Markdown
+      - name: 📋 Generar reporte de costos (tabla)
         run: |
-          infracost output --path=/tmp/infracost.json --format=md --out-file=/tmp/cost.md
+          infracost output --path=/tmp/infracost.json --format=table --out-file=/tmp/cost-table.txt
 
-      - name: Generar diagrama de infraestructura
+      - name: 🌐 Generar reporte de costos (HTML)
         run: |
-          infracost output --path=/tmp/infracost.json --format=diagram --out-file=/tmp/diagram.html
+          infracost output --path=/tmp/infracost.json --format=html --out-file=/tmp/cost-report.html
 
-      - name: Subir artefactos de Infracost
+      - name: 📝 Generar comentario para GitHub
+        run: |
+          infracost output --path=/tmp/infracost.json --format=github-comment --out-file=/tmp/github-comment.md
+
+      - name: 📤 Subir artefactos de Infracost
         uses: actions/upload-artifact@v4
         with:
-          name: infracost-report
+          name: infracost-reports
           path: |
-            /tmp/cost.md
-            /tmp/diagram.html
+            /tmp/cost-table.txt
+            /tmp/cost-report.html
+            /tmp/github-comment.md
+            /tmp/infracost.json
 
-      - name: Añadir costos y diagrama al summary
+      - name: 📊 Añadir resumen de costos
         run: |
-          echo '## Resumen de costos estimados' >> $GITHUB_STEP_SUMMARY
-          cat /tmp/cost.md >> $GITHUB_STEP_SUMMARY
+          echo '## 💰 Análisis de Costos de AWS' >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo '### 📋 Resumen de costos estimados:' >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat /tmp/cost-table.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
           echo '' >> $GITHUB_STEP_SUMMARY
           echo '---' >> $GITHUB_STEP_SUMMARY
-          echo '### Diagrama de infraestructura (descargar y abrir en tu navegador):' >> $GITHUB_STEP_SUMMARY
-          echo '[Descargar diagrama de infraestructura](./artifacts/infracost-report/diagram.html)' >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo '### 📁 Reportes disponibles para descarga:' >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo '- 📋 **Tabla de costos:** `cost-table.txt`' >> $GITHUB_STEP_SUMMARY
+          echo '- 🌐 **Reporte HTML interactivo:** `cost-report.html`' >> $GITHUB_STEP_SUMMARY
+          echo '- 📝 **Comentario GitHub:** `github-comment.md`' >> $GITHUB_STEP_SUMMARY
+          echo '- 📄 **Datos JSON completos:** `infracost.json`' >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo '### 🚀 Próximos pasos:' >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo '1. **Revisar los costos** estimados arriba' >> $GITHUB_STEP_SUMMARY
+          echo '2. **Descargar los reportes** para análisis detallado' >> $GITHUB_STEP_SUMMARY
+          echo '3. **Ejecutar terraform apply** si los costos son aceptables' >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo '---' >> $GITHUB_STEP_SUMMARY
+          echo '*Generado por Infracost - Análisis automático de costos de infraestructura*' >> $GITHUB_STEP_SUMMARY
+
+      # Ejecutar terraform apply solo si se selecciona esa opción
+      - name: ⚡ Terraform Apply
+        if: github.event.inputs.action == 'apply'
+        working-directory: ./terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: terraform apply -auto-approve tfplan
+
+      - name: 🗑️ Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        working-directory: ./terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: terraform destroy -auto-approve
