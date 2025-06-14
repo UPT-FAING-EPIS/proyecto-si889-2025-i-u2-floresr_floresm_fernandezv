@@ -13,16 +13,6 @@ style: |
     padding-bottom: 0.2em;
     margin-top: 0.2em;
   }
-  img {
-    display: block;
-    margin: 1em auto 0;
-    max-width: 1000px;
-    height: auto;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background-color: #fff;
-    padding: 8px;
-  }
 ---
 
 # PROYECTO APLICACION PARA LA GENERACION AUTOMATIZADA DE UN DICCIONARIO DE DATOS
@@ -49,36 +39,87 @@ Se desarrollará una aplicación web capaz de conectarse a bases de datos como S
 
 ---
 
-## Diagrama de Base de Datos
-
-![media/Diagrama_Base_datos.png](media/Diagrama_Base_datos.png)
-
----
-
 ## Diagrama de Arquitectura de software
 
 ![media/Diagrama_de_arquitectura_de_software.png](media/Diagrama_de_arquitectura_de_software.png)
-
+<style>
+  .diagrama-arch {
+    display: block;
+    margin: 1em auto 0;
+    max-width: 700px; 
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    padding: 8px;
+  }
+</style>
 ---
 
-
 ## Diagrama de Clases
-![media/Diagrama_de_clases.jpg](media/Diagrama_de_clases.jpg)
 
+![media/Diagrama_de_clases.jpg](media/Diagrama_de_clases.jpg)
+<style>
+  .diagrama-clases {
+    display: block;
+    margin: 1em auto 0;
+    max-width: 700px; 
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    padding: 8px;
+  }
+</style>
 ---
 
 ## Diagrama de Componentes
 
 ![media/Diagrama_de_componentes.png](media/Diagrama_de_componentes.png)
-
+<style>
+  .diagrama-componentes {
+    display: block;
+    margin: 1em auto 0;
+    max-width: 700px; 
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    padding: 8px;
+  }
+</style>
 ---
 
 ## Diagrama de Despliegue
 
-![media/Diagrama_despliegue.png](media/Diagrama_despliegue.png)
+![media/Diagrama_despliegue.png](media/terraform.png)
+<style>
+  .diagrama-despliegue {
+    display: block;
+    margin: 1em auto 0;
+    max-width: 700px; 
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    padding: 8px;
+  }
+</style>
 
 ---
 
 ## Analisis Economico Terraform
 
-![media/Costo_Terraform.png](media/Costo_Terraform.png)
+![media/Costo_Terraform.png](media/costosterraform.svg)
+<style>
+  .diagrama-economico {
+    display: block;
+    margin: 1em auto 0;
+    max-width: 700px; 
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    padding: 8px;
+  }
+</style>
