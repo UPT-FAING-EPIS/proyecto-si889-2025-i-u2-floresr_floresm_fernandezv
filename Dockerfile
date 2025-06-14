@@ -8,6 +8,7 @@ COPY ["DictApp/DataDicGen.WebAPI/DataDicGen.WebAPI.csproj", "DictApp/DataDicGen.
 COPY ["DictApp/DataDicGen.Application/DataDicGen.Application.csproj", "DictApp/DataDicGen.Application/"]
 COPY ["DictApp/DataDicGen.Domain/DataDicGen.Domain.csproj", "DictApp/DataDicGen.Domain/"]
 COPY ["DictApp/DataDicGen.Infrastructure/DataDicGen.Infrastructure.csproj", "DictApp/DataDicGen.Infrastructure/"]
+COPY ["DictApp/DataDictGen.Tests/DataDictGen.Tests.csproj", "DictApp/DataDictGen.Tests/"]
 
 # Restore dependencies
 RUN dotnet restore "DictApp/DataDictGen.sln"
