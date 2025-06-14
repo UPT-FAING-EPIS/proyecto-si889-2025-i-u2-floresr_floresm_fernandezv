@@ -67,7 +67,8 @@ jobs:
 
       - name: Publish backend
         working-directory: ./DictApp/DataDicGen.WebAPI
-        run: dotnet publish -c Release -o publish      - name: Zip backend artifact
+        run: dotnet publish -c Release -o publish      
+      - name: Zip backend artifact
         working-directory: ./DictApp/DataDicGen.WebAPI/publish
         run: zip -r ../backend.zip .
 
