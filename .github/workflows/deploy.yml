@@ -28,11 +28,11 @@ jobs:
           node-version: 20
 
       - name: Install frontend dependencies
-        working-directory: ./DataDicGen.Frontend
+        working-directory: ./DictApp/DataDicGen.Frontend
         run: npm ci
 
       - name: Build frontend
-        working-directory: ./DataDicGen.Frontend
+        working-directory: ./DictApp/DataDicGen.Frontend
         run: npm run build
 
       - name: Deploy frontend to S3
@@ -44,7 +44,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
-          SOURCE_DIR: ./DataDicGen.Frontend/dist
+          SOURCE_DIR: ./DictApp/DataDicGen.Frontend/dist
 
       # BACKEND: Build y deploy a Elastic Beanstalk
       - name: Setup .NET
@@ -53,15 +53,15 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore backend dependencies
-        working-directory: ./DataDicGen.WebAPI
+        working-directory: ./DictApp/DataDicGen.WebAPI
         run: dotnet restore
 
       - name: Publish backend
-        working-directory: ./DataDicGen.WebAPI
+        working-directory: ./DictApp/DataDicGen.WebAPI
         run: dotnet publish -c Release -o publish
 
       - name: Zip backend artifact
-        working-directory: ./DataDicGen.WebAPI/publish
+        working-directory: ./DictApp/DataDicGen.WebAPI/publish
         run: zip -r ../backend.zip .
 
       - name: Deploy backend to Elastic Beanstalk
@@ -73,11 +73,8 @@ jobs:
           environment_name: datadicgen-backend-env
           region: ${{ secrets.AWS_REGION }}
           version_label: github-${{ github.run_number }}
-          deployment_package: ./DataDicGen.WebAPI/backend.zip
-          # Configurar variables de entorno en Elastic Beanstalk
-          environment_variables: |
-            ConnectionStrings__DefaultConnection=${{ secrets.CONNECTION_STRING }}
-            OpenAI__ApiKey=${{ secrets.API_OPENAI_KEY }}
-            ASPNETCORE_ENVIRONMENT=Production
+          deployment_package: ./DictApp/DataDicGen.WebAPI/backend.zip
 
-      # Puedes agregar más variables de entorno o secrets según tus necesidades
+      # NOTA: Las variables de entorno (ConnectionStrings__DefaultConnection y OpenAI__ApiKey)
+      # deben configurarse directamente en la consola de AWS Elastic Beanstalk
+      # en Configuration > Software > Environment properties
