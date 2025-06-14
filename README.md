@@ -1,6 +1,6 @@
 # 📑 Aplicación para la Generación Automatizada de un Diccionario de Datos 
 
-## **Curso:** Inteligencia de Negocios  
+
 ## **Docente:** Mag. Patrick Cuadros Quiroga  
 
 ---
