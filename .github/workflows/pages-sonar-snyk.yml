@@ -30,27 +30,15 @@ jobs:
         with:
           fetch-depth: 0
           
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
         with:
-          path: ~\sonar\cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-          
-      - name: Cache SonarCloud scanner
-        id: cache-sonar-scanner
-        uses: actions/cache@v4
-        with:
-          path: .\.sonar\scanner
-          key: ${{ runner.os }}-sonar-scanner
-          restore-keys: ${{ runner.os }}-sonar-scanner
+          dotnet-version: '8.0.x'
           
       - name: Install SonarCloud scanner
-        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         shell: powershell
         run: |
-          New-Item -Path .\.sonar\scanner -ItemType Directory -Force
-          dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
+          dotnet tool install --global dotnet-sonarscanner
           
       - name: Build and analyze with SonarCloud
         env:
@@ -58,14 +46,13 @@ jobs:
         shell: powershell
         working-directory: ./DictApp
         run: |
-          .\.sonar\scanner\dotnet-sonarscanner begin /k:"mario-flores_proyecto-u2" /o:"mario-flores" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
+          dotnet sonarscanner begin /k:"mario-flores_proyecto-u2" /o:"mario-flores" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
           dotnet build DataDictGen.sln
-          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
           
       - name: Set SonarCloud info
         id: sonar-info
-        shell: bash
-        run: echo "report-url=https://sonarcloud.io/project/overview?id=mario-flores_proyecto-u2" >> $GITHUB_OUTPUT
+        run: echo "report-url=https://sonarcloud.io/project/overview?id=mario-flores_proyecto-u2" >> $env:GITHUB_OUTPUT
 
   snyk-analysis:
     name: Snyk .NET Security Analysis
@@ -92,15 +79,15 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --file=./DictApp/DataDictGen.sln --format=json --json-file-output=./reports/snyk-dotnet-report.json
+          args: --file=./DictApp/DataDictGen.sln --json-file-output=./reports/snyk-dotnet-report.json
           
-      - name: Run Snyk for .NET with HTML output
+      - name: Run Snyk for .NET with HTML output  
         continue-on-error: true
-        uses: snyk/actions/dotnet@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --file=./DictApp/DataDictGen.sln --format=html --html-file-output=./reports/snyk-dotnet-report.html
+        run: |
+          npm install -g snyk
+          snyk test --file=./DictApp/DataDictGen.sln --format=html > ./reports/snyk-dotnet-report.html || true
           
       - name: Upload Snyk reports
         uses: actions/upload-artifact@v4
