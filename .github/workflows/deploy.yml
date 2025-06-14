@@ -67,19 +67,27 @@ jobs:
 
       - name: Publish backend
         working-directory: ./DictApp/DataDicGen.WebAPI
-        run: dotnet publish -c Release -o publish
-
-      - name: Zip backend artifact
+        run: dotnet publish -c Release -o publish      - name: Zip backend artifact
         working-directory: ./DictApp/DataDicGen.WebAPI/publish
         run: zip -r ../backend.zip .
 
-      - name: Deploy backend to Elastic Beanstalk
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Create Elastic Beanstalk application if not exists
+        run: |
+          aws elasticbeanstalk describe-applications --application-names datadicgen-backend || \
+          aws elasticbeanstalk create-application --application-name datadicgen-backend --description "Data Dictionary Generator Backend API"      - name: Deploy backend to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v21
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          application_name: datadicgen-backend
-          environment_name: datadicgen-backend-env
+          application_name: dictapp-backend-v2
+          environment_name: Dictapp-backend-v2-env
           region: ${{ secrets.AWS_REGION }}
           version_label: github-${{ github.run_number }}
           deployment_package: ./DictApp/DataDicGen.WebAPI/backend.zip
