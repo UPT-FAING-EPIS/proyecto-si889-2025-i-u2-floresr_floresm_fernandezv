@@ -2,12 +2,6 @@ import React from 'react';
 import { 
   Container, Box, Paper, Typography, Button, Chip
 } from '@mui/material';
-import { 
-  Storage as StorageIcon, 
-  Memory as MemoryIcon, 
-  AccountTree as AccountTreeIcon, 
-  ViewModule as ViewModuleIcon
-} from '@mui/icons-material';
 
 interface MainMenuProps {
   onSelectOption: (option: string) => void;
@@ -16,59 +10,59 @@ interface MainMenuProps {
 const MainMenu: React.FC<MainMenuProps> = ({ onSelectOption }) => {  const menuOptions = [
     {
       id: 'sql',
-      title: 'SQL Server',
+      title: '',
       description: 'Base de datos relacional de Microsoft',
-      icon: <StorageIcon fontSize="large" />,
+      image: '/sqlserver.svg',
       color: '#1976d2',
       gradient: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
       type: 'Relacional'
     },
     {
       id: 'mysql',
-      title: 'MySQL',
+      title: '',
       description: 'Base de datos relacional open source',
-      icon: <StorageIcon fontSize="large" />,
+      image: '/mysql.svg',
       color: '#388e3c',
       gradient: 'linear-gradient(135deg, #388e3c 0%, #66bb6a 100%)',
       type: 'Relacional'
     },
     {
       id: 'postgres',
-      title: 'PostgreSQL',
+      title: '',
       description: 'Base de datos relacional avanzada',
-      icon: <StorageIcon fontSize="large" />,
+      image: '/postgresql.svg',
       color: '#ff7043',
       gradient: 'linear-gradient(135deg, #ff7043 0%, #ffab91 100%)',
       type: 'Relacional'
     },
     {
       id: 'mongo',
-      title: 'MongoDB',
+      title: '',
       description: 'Base de datos NoSQL orientada a documentos',
-      icon: <AccountTreeIcon fontSize="large" />,
+      image: '/mongodb.svg',
       color: '#26a69a',
       gradient: 'linear-gradient(135deg, #26a69a 0%, #4db6ac 100%)',
       type: 'NoSQL'
     },
     {
       id: 'redis',
-      title: 'Redis',
+      title: '',
       description: 'Base de datos en memoria clave-valor',
-      icon: <MemoryIcon fontSize="large" />,
+      image: '/redis.svg',
       color: '#e53e3e',
       gradient: 'linear-gradient(135deg, #e53e3e 0%, #ff6b6b 100%)',
       type: 'NoSQL'
     },
     {
       id: 'cassandra',
-      title: 'Cassandra',
+      title: '',
       description: 'Base de datos NoSQL orientada a columnas',
-      icon: <ViewModuleIcon fontSize="large" />,
+      image: '/casandra.svg',
       color: '#9c27b0',
       gradient: 'linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%)',
       type: 'NoSQL'
     }
-  ];  return (
+  ];return (
     <Box 
       sx={{ 
         minHeight: '100vh',
@@ -129,8 +123,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ onSelectOption }) => {  const menuO
               }}
               onClick={() => onSelectOption(option.id)}
             >
-              {/* Header con gradiente */}
-              <Box 
+              {/* Header con gradiente */}              <Box 
                 sx={{ 
                   background: option.gradient,
                   p: 3,
@@ -138,8 +131,17 @@ const MainMenu: React.FC<MainMenuProps> = ({ onSelectOption }) => {  const menuO
                   color: 'white'
                 }}
               >
-                <Box sx={{ mb: 2 }}>
-                  {option.icon}
+                <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <img 
+                    src={option.image} 
+                    alt={`${option.title} logo`}
+                    style={{ 
+                      width: '110px', 
+                      height: '110px',
+                      filter: 'brightness(0) invert(1)', // Hace las imágenes blancas
+                      objectFit: 'contain'
+                    }} 
+                  />
                 </Box>
                 <Typography variant="h5" component="h3" fontWeight="bold">
                   {option.title}
