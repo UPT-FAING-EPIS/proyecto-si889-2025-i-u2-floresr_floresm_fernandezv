@@ -1,43 +1,265 @@
-name: Docs, SonarCloud & Snyk
+name: Analysis Reports & GitHub Pages
 
 on:
   push:
     branches: [ main ]
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
-  build-docs-analyze:
+  sonar-analysis:
+    name: SonarCloud Analysis
+    runs-on: windows-latest
+    outputs:
+      sonar-report-url: ${{ steps.sonar-info.outputs.report-url }}
+    steps:
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'zulu'
+          
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4
+        with:
+          path: ~\sonar\cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+          
+      - name: Cache SonarCloud scanner
+        id: cache-sonar-scanner
+        uses: actions/cache@v4
+        with:
+          path: .\.sonar\scanner
+          key: ${{ runner.os }}-sonar-scanner
+          restore-keys: ${{ runner.os }}-sonar-scanner
+          
+      - name: Install SonarCloud scanner
+        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+        shell: powershell
+        run: |
+          New-Item -Path .\.sonar\scanner -ItemType Directory -Force
+          dotnet tool update dotnet-sonarscanner --tool-path .\.sonar\scanner
+          
+      - name: Build and analyze with SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        shell: powershell
+        working-directory: ./DictApp
+        run: |
+          .\.sonar\scanner\dotnet-sonarscanner begin /k:"mario-flores_proyecto-u2" /o:"mario-flores" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
+          dotnet build DataDictGen.sln
+          .\.sonar\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          
+      - name: Set SonarCloud info
+        id: sonar-info
+        shell: bash
+        run: echo "report-url=https://sonarcloud.io/project/overview?id=mario-flores_proyecto-u2" >> $GITHUB_OUTPUT
+
+  snyk-analysis:
+    name: Snyk Security Analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      # Build documentación (ajusta el directorio si usas otro generador)
-      - name: Instalar dependencias y build docs
-        working-directory: ./DataDicGen.Frontend
+        
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install .NET dependencies
+        working-directory: ./DictApp
+        run: dotnet restore DataDictGen.sln
+        
+      - name: Install Frontend dependencies
+        working-directory: ./DictApp/DataDicGen.Frontend
+        run: npm ci
+        
+      - name: Create reports directory
+        run: mkdir -p ./reports
+        
+      - name: Install Snyk CLI
+        run: npm install -g snyk
+        
+      - name: Run Snyk for .NET with HTML output
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: |
-          npm ci
-          npm run docs:build || npm run build
+          snyk test --file=./DictApp/DataDictGen.sln --format=html > ./reports/snyk-dotnet-report.html || true
+          
+      - name: Run Snyk for Frontend with HTML output
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          cd ./DictApp/DataDicGen.Frontend
+          snyk test --format=html > ../../reports/snyk-frontend-report.html || true
+          
+      - name: Upload Snyk reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-reports
+          path: ./reports/
 
-      # Publicar en GitHub Pages
+  reports-page:
+    name: Generate Reports Page
+    runs-on: ubuntu-latest
+    needs: [sonar-analysis, snyk-analysis]
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download Snyk reports
+        uses: actions/download-artifact@v4
+        with:
+          name: snyk-reports
+          path: ./reports
+          
+      - name: Create reports index page
+        run: |
+          mkdir -p ./public
+          cat > ./public/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="es">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Reportes de Análisis - DataDictGen</title>
+              <style>
+                  body { 
+                      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                      margin: 0; 
+                      padding: 20px; 
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      min-height: 100vh;
+                  }
+                  .container { 
+                      max-width: 800px; 
+                      margin: 0 auto; 
+                      background: white; 
+                      border-radius: 15px; 
+                      padding: 40px; 
+                      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                  }
+                  h1 { 
+                      color: #2c3e50; 
+                      text-align: center; 
+                      margin-bottom: 30px; 
+                      font-size: 2.5em;
+                  }
+                  .report-card { 
+                      border: 2px solid #3498db; 
+                      border-radius: 10px; 
+                      padding: 25px; 
+                      margin: 20px 0; 
+                      background: #f8f9fa;
+                      transition: transform 0.3s ease;
+                  }
+                  .report-card:hover {
+                      transform: translateY(-5px);
+                      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                  }
+                  .report-card h2 { 
+                      color: #2980b9; 
+                      margin-top: 0; 
+                  }
+                  .report-link { 
+                      display: inline-block; 
+                      background: #3498db; 
+                      color: white; 
+                      padding: 12px 24px; 
+                      text-decoration: none; 
+                      border-radius: 5px; 
+                      margin: 5px; 
+                      transition: background 0.3s ease;
+                  }
+                  .report-link:hover { 
+                      background: #2980b9; 
+                  }
+                  .info { 
+                      background: #e8f4fd; 
+                      border-left: 4px solid #3498db; 
+                      padding: 15px; 
+                      margin: 20px 0; 
+                  }
+                  .timestamp {
+                      text-align: center;
+                      color: #7f8c8d;
+                      font-style: italic;
+                      margin-top: 30px;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>📊 Reportes de Análisis</h1>
+                  <h2 style="text-align: center; color: #7f8c8d;">DataDictGen Project</h2>
+                  
+                  <div class="info">
+                      <strong>ℹ️ Información:</strong> Esta página contiene los reportes automáticos de análisis de calidad y seguridad del código.
+                  </div>
+                  
+                  <div class="report-card">
+                      <h2>🔍 SonarCloud - Análisis de Calidad</h2>
+                      <p>Análisis completo de calidad de código, bugs, vulnerabilidades y code smells.</p>
+                      <a href="${{ needs.sonar-analysis.outputs.sonar-report-url }}" class="report-link" target="_blank">
+                          📈 Ver Reporte SonarCloud
+                      </a>
+                  </div>
+                  
+                  <div class="report-card">
+                      <h2>🛡️ Snyk - Análisis de Seguridad</h2>
+                      <p>Análisis de vulnerabilidades de seguridad en dependencias.</p>
+                      <a href="./snyk-dotnet-report.html" class="report-link">
+                          🔒 Reporte .NET
+                      </a>
+                      <a href="./snyk-frontend-report.html" class="report-link">
+                          ⚛️ Reporte Frontend
+                      </a>
+                  </div>
+                  
+                  <div class="timestamp">
+                      Última actualización: $(date)
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+          
+      - name: Copy reports to public directory
+        run: |
+          cp -r ./reports/* ./public/ 2>/dev/null || true
+          
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './public'
+          
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./DataDicGen.Frontend/dist
-
-      # SonarCloud
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
-        env:
-          SONAR_TOKEN: ${{ secrets.apikey_token }}
-        with:
-          projectBaseDir: .
-
-      # Snyk
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions@v4
-        env:
-          SNYK_TOKEN: ${{ secrets.api_key }}
-        with:
-          command: test
+        id: deployment
+        uses: actions/deploy-pages@v4
