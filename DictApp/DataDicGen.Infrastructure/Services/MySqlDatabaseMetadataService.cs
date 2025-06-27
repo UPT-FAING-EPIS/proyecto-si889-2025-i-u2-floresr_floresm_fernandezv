@@ -15,12 +15,18 @@ public class MySqlDatabaseMetadataService : IDatabaseMetadataService
     }    public async Task<List<TableSchemaDto>> ObtenerDiccionarioAsync(DatabaseConnectionDto dto)
     {
         var resultado = new List<TableSchemaDto>();
-        
-        // Construir cadena de conexión con puerto opcional
-        var port = dto.Port ?? 3306; // Puerto por defecto de MySQL
-        var connectionString = $"Server={dto.Server};Port={port};Database={dto.Database};Uid={dto.User};Pwd={dto.Password};";
-
-        using var connection = new MySqlConnection(connectionString);
+        // Si se provee una cadena de conexión personalizada, usarla directamente
+        string connectionString;
+        if (!string.IsNullOrWhiteSpace(dto.ConnectionString))
+        {
+            connectionString = dto.ConnectionString;
+        }
+        else
+        {
+            var port = dto.Port ?? 3306; // Puerto por defecto de MySQL
+            connectionString = $"Server={dto.Server};Port={port};Database={dto.Database};Uid={dto.User};Pwd={dto.Password};";
+        }
+        using var connection = new MySql.Data.MySqlClient.MySqlConnection(connectionString);
         await connection.OpenAsync();
 
         // Obtener tablas

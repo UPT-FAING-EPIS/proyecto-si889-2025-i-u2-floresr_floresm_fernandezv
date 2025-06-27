@@ -12,6 +12,8 @@ import RedisConnectionForm from '../components/RedisConnectionForm';
 import CassandraConnectionForm from '../components/CassandraConnectionForm';
 import { DatabasePreview } from '../components/DatabasePreview';
 import { apiService } from '../services/api-service';
+import VersionHistoryPage from './VersionHistoryPage';
+import SidebarMenu from '../components/SidebarMenu';
 
 enum AppScreen {
   LOGIN,
@@ -23,7 +25,8 @@ enum AppScreen {
   MONGO_CONNECTION,
   REDIS_CONNECTION,
   CASSANDRA_CONNECTION,
-  DATABASE_PREVIEW
+  DATABASE_PREVIEW,
+  VERSION_HISTORY // <-- nuevo
 }
 
 const HomePage: React.FC = () => {
@@ -31,11 +34,14 @@ const HomePage: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>(AppScreen.LOGIN);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);  const [previewData, setPreviewData] = useState<any>(null);
   const [databaseType, setDatabaseType] = useState<'mysql' | 'postgresql' | 'mongodb' | 'sqlserver' | 'redis' | 'cassandra'>('mysql');
+  const [userId, setUserId] = useState<string>(''); // <-- para historial
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Manejar el éxito del login
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = (username: string) => {
     setIsLoggedIn(true);
     setCurrentScreen(AppScreen.MAIN_MENU);
+    setUserId(username);
   };
 
   // Manejar el éxito del registro
@@ -73,6 +79,9 @@ const HomePage: React.FC = () => {
       case 'cassandra':
         setCurrentScreen(AppScreen.CASSANDRA_CONNECTION);
         break;
+      case 'version-history':
+        setCurrentScreen(AppScreen.VERSION_HISTORY);
+        break;
       default:
         alert(`Opción "${option}" - Funcionalidad no implementada aún`);
     }
@@ -104,6 +113,8 @@ const handleGoBack = () => {
           setCurrentScreen(AppScreen.MAIN_MENU);
       }
       setPreviewData(null);
+    } else if (currentScreen === AppScreen.VERSION_HISTORY) {
+      setCurrentScreen(AppScreen.MAIN_MENU);
     } else if (
       currentScreen === AppScreen.SQL_CONNECTION ||
       currentScreen === AppScreen.MYSQL_CONNECTION ||
@@ -172,9 +183,14 @@ const renderCurrentScreen = () => {
             preview={previewData}
             onExport={handleExportPdf}
             onBack={handleBackFromPreview}
-            databaseType={databaseType} // <-- Pasamos el tipo de BD
+            databaseType={databaseType}
+            userId={userId}
+            showExportWord={['mongodb', 'redis', 'cassandra', 'sqlserver', 'mysql', 'postgresql'].includes(databaseType)}
+            onExportWord={['mongodb', 'redis', 'cassandra', 'sqlserver', 'mysql', 'postgresql'].includes(databaseType) ? handleExportWord : undefined}
           />
         ) : <div>Cargando preview...</div>;
+      case AppScreen.VERSION_HISTORY:
+        return <VersionHistoryPage userId={userId} />;
       default:        return <div>Pantalla no encontrada</div>;
     }
   };
@@ -186,18 +202,40 @@ const renderCurrentScreen = () => {
   };
   const handleExportPdf = async (editedData: any) => {
     try {
-      // Usar api-service en lugar de fetch directo
-      const blob = await apiService.exportPdfFromPreview(editedData);
-      
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'diccionario-datos.pdf';
-      a.click();
-      window.URL.revokeObjectURL(url);
-        } catch (error) {
+      // Exportar PDF y obtener el token
+      const result = await apiService.exportPdfFromPreview(editedData);
+      if (result && result.token) {
+        localStorage.setItem('connectionToken', result.token);
+        // Descargar el PDF usando el endpoint correcto para tokens de exportación
+        const pdfBlob = await apiService.downloadExportedPdf(result.token);
+        const url = window.URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'diccionario-datos.pdf';
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } else {
+        alert('No se pudo obtener el token para el PDF.');
+      }
+    } catch (error) {
       console.error('Error:', error);
       alert('Error al exportar PDF');
+    }
+  };
+  // Descarga el Word convertido a partir del PDF exportado usando el token
+  const handleExportWord = async (editedData?: any) => {
+    try {
+      const dataToExport = editedData || previewData;
+      const wordBlob = await apiService.exportWord(dataToExport);
+      const url = window.URL.createObjectURL(wordBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'diccionario-datos.docx';
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error al exportar Word:', error);
+      alert('Error al exportar Word');
     }
   };
   const handleBackFromPreview = () => {
@@ -259,25 +297,42 @@ const renderCurrentScreen = () => {
               {getPageTitle()}            </Typography>
 
             {isLoggedIn && (
-              <Button 
-                color="inherit" 
-                variant="outlined"
-                onClick={() => {
-                  if (confirm('¿Está seguro que desea cerrar sesión?')) {
-                    setIsLoggedIn(false);
-                    setCurrentScreen(AppScreen.LOGIN);
-                  }
-                }}
-                sx={{
-                  borderColor: 'rgba(255,255,255,0.5)',
-                  '&:hover': {
-                    borderColor: 'white',
-                    backgroundColor: 'rgba(255,255,255,0.1)'
-                  }
-                }}
-              >
-                Cerrar Sesión
-              </Button>
+              <>
+                <Button
+                  color="inherit"
+                  variant="outlined"
+                  onClick={() => setCurrentScreen(AppScreen.VERSION_HISTORY)}
+                  sx={{
+                    borderColor: 'rgba(255,255,255,0.5)',
+                    mr: 2,
+                    '&:hover': {
+                      borderColor: 'white',
+                      backgroundColor: 'rgba(255,255,255,0.1)'
+                    }
+                  }}
+                >
+                  Historial de versiones
+                </Button>
+                <Button 
+                  color="inherit" 
+                  variant="outlined"
+                  onClick={() => {
+                    if (confirm('¿Está seguro que desea cerrar sesión?')) {
+                      setIsLoggedIn(false);
+                      setCurrentScreen(AppScreen.LOGIN);
+                    }
+                  }}
+                  sx={{
+                    borderColor: 'rgba(255,255,255,0.5)',
+                    '&:hover': {
+                      borderColor: 'white',
+                      backgroundColor: 'rgba(255,255,255,0.1)'
+                    }
+                  }}
+                >
+                  Cerrar Sesión
+                </Button>
+              </>
             )}
           </Toolbar>
         </AppBar>

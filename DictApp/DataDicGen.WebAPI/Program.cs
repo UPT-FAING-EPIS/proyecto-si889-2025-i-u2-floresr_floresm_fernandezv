@@ -34,16 +34,9 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:5173", // URL del frontend en Vite
-                "http://localhost:5174", // URL alternativa
-                "http://localhost:3000", // URL de React (por si acaso)
-                "http://localhost:3001", // URL alternativa
-                "http://datadicgen-frontend-mario-20250613045210.s3-website.us-east-2.amazonaws.com" // Frontend en S3
-              )
+        policy.AllowAnyOrigin() // Permitir cualquier origen para desarrollo
               .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials(); // Permitir credenciales si es necesario
+              .AllowAnyMethod();
     });
 });
 

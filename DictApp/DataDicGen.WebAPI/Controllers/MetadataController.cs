@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using DataDicGen.Application.Dtos;
 using DataDicGen.Application.Interfaces.Services;
 using DataDicGen.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace DataDicGen.WebAPI.Controllers;
 
@@ -135,7 +137,7 @@ public class MetadataController : ControllerBase
         }
     }
      /// <summary>
-    /// Exporta PDF con datos editados del preview
+    /// Exporta PDF con datos editados del preview y devuelve un token para conversión posterior
     /// </summary>
     [HttpPost("export-pdf")]
     public async Task<IActionResult> ExportPdf([FromBody] DatabasePreviewDto previewData)
@@ -144,8 +146,21 @@ public class MetadataController : ControllerBase
         {
             // Generar PDF con los datos editados de forma asíncrona
             var pdfBytes = await Task.Run(() => _documentGenerator.GenerarDiccionarioPdf(previewData.Tables));
-            
-            return File(pdfBytes, "application/pdf", "diccionario-datos-editado.pdf");
+
+            // Generar un token único
+            var token = Guid.NewGuid().ToString();
+
+            // Guardar el PDF temporalmente en disco o memoria (aquí ejemplo en disco)
+            var tempPath = Path.Combine(Path.GetTempPath(), $"diccionario_{token}.pdf");
+            await System.IO.File.WriteAllBytesAsync(tempPath, pdfBytes);
+
+            // Guardar el preview serializado para conversión a Word
+            var tempPreviewPath = Path.Combine(Path.GetTempPath(), $"diccionario_{token}.preview.json");
+            var previewJson = System.Text.Json.JsonSerializer.Serialize(previewData);
+            await System.IO.File.WriteAllTextAsync(tempPreviewPath, previewJson);
+
+            // Devolver el token al frontend
+            return Ok(new { token });
         }
         catch (Exception ex)
         {
@@ -264,6 +279,186 @@ public class MetadataController : ControllerBase
         catch (Exception ex)
         {
             return BadRequest($"Error generando preview Cassandra: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Genera PDF y lo convierte automáticamente a Word manteniendo el formato
+    /// </summary>
+    [HttpGet("diccionario/word/{token}")]
+    public async Task<IActionResult> DescargarDiccionarioWordPorToken(string token)
+    {
+        try
+        {
+            // Validar el token
+            if (!_credentialsCache.HasToken(token))
+                return BadRequest("Token inválido o expirado. Por favor, vuelva a conectarse.");
+
+            // Obtener credenciales
+            var credentials = _credentialsCache.GetCredentials(token);
+
+            // Generar el PDF primero
+            var tablas = await _metadataService.ObtenerDiccionarioAsync(credentials);
+            var pdfBytes = _documentGenerator.GenerarDiccionarioPdf(tablas);
+
+            // Convertir PDF a Word manteniendo el formato exacto
+            // var wordBytes = await _pdfToWordConverter.ConvertPdfToWordAsync(pdfBytes); // Eliminado
+
+            // Alternativa: devolver el PDF directamente o lanzar un error informativo
+            return File(pdfBytes, "application/pdf", "diccionario_datos.pdf");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error al generar el documento Word: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Genera PDF y lo convierte a Word usando credenciales directas
+    /// </summary>
+    [HttpPost("diccionario/word")]
+    public async Task<IActionResult> DescargarDiccionarioWord([FromBody] DatabaseConnectionDto dto)
+    {
+        try
+        {
+            // Generar el PDF primero
+            var tablas = await _metadataService.ObtenerDiccionarioAsync(dto);
+            var pdfBytes = _documentGenerator.GenerarDiccionarioPdf(tablas);
+
+            // Convertir PDF a Word manteniendo el formato exacto
+            // var wordBytes = await _pdfToWordConverter.ConvertPdfToWordAsync(pdfBytes); // Eliminado
+
+            // Alternativa: devolver el PDF directamente o lanzar un error informativo
+            return File(pdfBytes, "application/pdf", "diccionario_datos.pdf");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error al generar el documento Word: {ex.Message}");
+        }
+    }
+    /// <summary>
+    /// Convierte un PDF exportado (usando token) a Word manteniendo el formato exacto
+    /// </summary>
+    [HttpGet("convert-pdf-to-word/{token}")]
+    public async Task<IActionResult> ConvertPdfToWordByToken(string token)
+    {
+        try
+        {
+            // Buscar el preview temporal usando el token (mismo flujo que PDF)
+            var tempPreviewPath = Path.Combine(Path.GetTempPath(), $"diccionario_{token}.preview.json");
+            if (!System.IO.File.Exists(tempPreviewPath))
+                return NotFound("No se encontró el preview temporal para el token proporcionado.");
+
+            // Leer el preview serializado
+            var previewJson = await System.IO.File.ReadAllTextAsync(tempPreviewPath);
+            var previewData = System.Text.Json.JsonSerializer.Deserialize<DataDicGen.Application.Dtos.DatabasePreviewDto>(previewJson);
+            if (previewData == null)
+                return StatusCode(500, "No se pudo deserializar el preview para generar el Word.");
+
+            // Generar el Word directamente desde los datos
+            var wordBytes = _documentGenerator.GenerarDiccionarioWord(previewData.Tables);
+
+            return File(wordBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "diccionario_datos.docx");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error al generar el documento Word: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Descarga el PDF temporal generado por export-pdf usando el token
+    /// </summary>
+    [HttpGet("download-exported-pdf/{token}")]
+    public IActionResult DownloadExportedPdf(string token)
+    {
+        try
+        {
+            var tempPath = Path.Combine(Path.GetTempPath(), $"diccionario_{token}.pdf");
+            if (!System.IO.File.Exists(tempPath))
+                return NotFound("No se encontró el PDF temporal para el token proporcionado.");
+
+            var pdfBytes = System.IO.File.ReadAllBytes(tempPath);
+            return File(pdfBytes, "application/pdf", "diccionario_datos.pdf");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error al descargar el PDF: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Exporta Word directamente desde el preview editado (flujo moderno, sin token)
+    /// </summary>
+    [HttpPost("export-word")]
+    public async Task<IActionResult> ExportWord([FromBody] DatabasePreviewDto previewData)
+    {
+        try
+        {
+            // Generar el Word directamente desde los datos editados
+            var wordBytes = await Task.Run(() => _documentGenerator.GenerarDiccionarioWord(previewData.Tables));
+            return File(wordBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "diccionario_datos.docx");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error al exportar Word: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Guarda una nueva versión del diccionario generado por el usuario
+    /// </summary>
+    [HttpPost("save-version")]
+    public async Task<IActionResult> SaveDictionaryVersion([FromServices] Infrastructure.Persistence.AppDbContext db,
+        [FromBody] DatabasePreviewDto preview, [FromQuery] string userId, [FromQuery] string databaseType)
+    {
+        try
+        {
+            var version = new Domain.Entities.DictionaryVersion
+            {
+                UserId = userId,
+                DatabaseType = databaseType,
+                DatabaseName = preview.DatabaseName ?? "",
+                GeneratedAt = DateTime.UtcNow,
+                Content = System.Text.Json.JsonSerializer.Serialize(preview),
+                // Puedes calcular el número de versión aquí si lo deseas
+            };
+            db.DictionaryVersions.Add(version);
+            await db.SaveChangesAsync();
+            return Ok(new { version.Id, version.GeneratedAt });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error al guardar la versión: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Lista el historial de versiones de diccionario de un usuario
+    /// </summary>
+    [HttpGet("versions")]
+    public async Task<IActionResult> GetDictionaryVersions([FromServices] Infrastructure.Persistence.AppDbContext db, [FromQuery] string userId)
+    {
+        try
+        {
+            var versions = await db.DictionaryVersions
+                .Where(v => v.UserId == userId)
+                .OrderByDescending(v => v.GeneratedAt)
+                .Select(v => new {
+                    v.Id,
+                    v.DatabaseType,
+                    v.DatabaseName,
+                    v.GeneratedAt,
+                    v.VersionNumber,
+                    v.Tag,
+                    v.Content // <-- incluir el contenido completo
+                })
+                .ToListAsync();
+            return Ok(versions);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error al obtener el historial: {ex.Message}");
         }
     }
 }

@@ -15,12 +15,18 @@ public class PostgresDatabaseMetadataService : IDatabaseMetadataService
     }    public async Task<List<TableSchemaDto>> ObtenerDiccionarioAsync(DatabaseConnectionDto dto)
     {
         var resultado = new List<TableSchemaDto>();
-        
-        // Construir cadena de conexión con puerto opcional
-        var port = dto.Port ?? 5432; // Puerto por defecto de PostgreSQL
-        var connectionString = $"Host={dto.Server};Port={port};Database={dto.Database};Username={dto.User};Password={dto.Password};";
-
-        using var connection = new NpgsqlConnection(connectionString);
+        // Si se provee una cadena de conexión personalizada, usarla directamente
+        string connectionString;
+        if (!string.IsNullOrWhiteSpace(dto.ConnectionString))
+        {
+            connectionString = dto.ConnectionString;
+        }
+        else
+        {
+            var port = dto.Port ?? 5432; // Puerto por defecto de PostgreSQL
+            connectionString = $"Host={dto.Server};Port={port};Database={dto.Database};Username={dto.User};Password={dto.Password};";
+        }
+        using var connection = new Npgsql.NpgsqlConnection(connectionString);
         await connection.OpenAsync();
 
         // Obtener tablas

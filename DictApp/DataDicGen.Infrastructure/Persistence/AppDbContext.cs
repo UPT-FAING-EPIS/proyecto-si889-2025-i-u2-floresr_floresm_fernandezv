@@ -10,6 +10,7 @@ namespace DataDicGen.Infrastructure.Persistence
         }
 
         public DbSet<User> Users { get; set; }  // Por ahora solo la tabla de usuarios
+        public DbSet<DictionaryVersion> DictionaryVersions { get; set; } // Tabla de versiones de diccionario
 
         // protected override void OnModelCreating(ModelBuilder modelBuilder)
         // {

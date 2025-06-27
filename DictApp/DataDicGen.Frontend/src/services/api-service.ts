@@ -3,7 +3,7 @@ import { DatabaseConnectionDto, ConnectionResponseDto } from '../types/api-types
 
 // URL base de la API backend (desplegada en AWS Elastic Beanstalk v2)
 const API_URL = 'http://dictapp-backend-v2-env.eba-mxmstnzx.us-east-2.elasticbeanstalk.com/api';
-// const API_URL = 'http://localhost:5175/api';
+ //const API_URL = 'http://localhost:5175/api';
 // Crear una instancia de axios con configuración personalizada
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -147,12 +147,10 @@ export const apiService = {
     return response.data;
   },
 
-  // Exportar PDF con datos editados del preview
-  async exportPdfFromPreview(previewData: any): Promise<Blob> {
-    const response = await apiClient.post('/Metadata/export-pdf', previewData, {
-      responseType: 'blob'
-    });
-    return response.data;
+  // Exportar PDF con datos editados del preview y obtener el token
+  async exportPdfFromPreview(previewData: any): Promise<{ token: string }> {
+    const response = await apiClient.post('/Metadata/export-pdf', previewData);
+    return response.data; // { token: '...' }
   },
   // Generar vista previa editable del diccionario para MySQL
   async generatePreviewMySql(credentials: DatabaseConnectionDto): Promise<any> {
@@ -233,5 +231,30 @@ export const apiService = {
       
       throw error;
     }
+  },
+
+  // Descargar el PDF temporal generado por export-pdf usando el token
+  async downloadExportedPdf(token: string): Promise<Blob> {
+    const response = await apiClient.get(`/Metadata/download-exported-pdf/${token}`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
+  // Descargar y convertir el PDF exportado a Word usando el token
+  async convertPdfToWordByToken(token: string): Promise<Blob> {
+    const response = await apiClient.get(`/Metadata/convert-pdf-to-word/${token}`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
+  // Exportar Word directamente desde el preview (nuevo flujo)
+  async exportWord(previewData: any): Promise<Blob> {
+    // Asumimos que el endpoint es /Metadata/export-word y recibe el preview como JSON
+    const response = await apiClient.post('/Metadata/export-word', previewData, {
+      responseType: 'blob'
+    });
+    return response.data;
   },
 };

@@ -17,8 +17,16 @@ public class DatabaseMetadataService : IDatabaseMetadataService
     public async Task<List<TableSchemaDto>> ObtenerDiccionarioAsync(DatabaseConnectionDto dto)
     {
         var resultado = new List<TableSchemaDto>();
-
-        var connectionString = $"Server={dto.Server};Database={dto.Database};User Id={dto.User};Password={dto.Password};TrustServerCertificate=True;";
+        // Si se provee una cadena de conexión personalizada, usarla directamente
+        string connectionString;
+        if (!string.IsNullOrWhiteSpace(dto.ConnectionString))
+        {
+            connectionString = dto.ConnectionString;
+        }
+        else
+        {
+            connectionString = $"Server={dto.Server};Database={dto.Database};User Id={dto.User};Password={dto.Password};TrustServerCertificate=True;";
+        }
 
         using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync();

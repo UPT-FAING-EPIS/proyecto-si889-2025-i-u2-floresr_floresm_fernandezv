@@ -32,16 +32,13 @@ import {
 import { ERDiagram } from './ERDiagram';
 import { GlobalSearch } from './GlobalSearch';
 import { DatabaseMetrics } from './DatabaseMetrics';
-import { versionService } from '../services/version-service';
+import { apiService } from '../services/api-service';
 
 interface DatabasePreviewProps {
   preview: any;
   onExport: (data: any) => Promise<void>;
   onBack: () => void;
   databaseType?: 'mysql' | 'postgresql' | 'mongodb' | 'sqlserver' | 'redis' | 'cassandra';
-  showExportWord?: boolean;
-  onExportWord?: (data: any) => Promise<void>;
-  userId: string;
 }
 
 interface TabPanelProps {
@@ -74,17 +71,12 @@ export const DatabasePreview: React.FC<DatabasePreviewProps> = ({
   preview: initialPreview,
   onExport,
   onBack,
-  databaseType = 'mysql',
-  showExportWord = false,
-  onExportWord,
-  userId
+  databaseType = 'mysql'
 }) => {
   const [preview, setPreview] = useState(initialPreview);
   const [editingTable, setEditingTable] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [convertingToWord, setConvertingToWord] = useState(false);
-  const [pdfGenerated, setPdfGenerated] = useState(false);
-  const [lastGeneratedPdf, setLastGeneratedPdf] = useState<Blob | null>(null);
+  const [exportingWord, setExportingWord] = useState(false);
   const [filteredTables, setFilteredTables] = useState(initialPreview.tables);
   const [tabValue, setTabValue] = useState(0);
   const [snackbar, setSnackbar] = useState({ 
@@ -165,9 +157,6 @@ export const DatabasePreview: React.FC<DatabasePreviewProps> = ({
     try {
       await onExport(preview);
       showSnackbar('PDF exportado exitosamente');
-      setPdfGenerated(true);
-      // Si quieres también guardar el blob del PDF para conversión futura, 
-      // necesitarías modificar la función onExport para retornarlo
     } catch (error) {
       showSnackbar('Error al exportar PDF', 'error');
     } finally {
@@ -176,24 +165,21 @@ export const DatabasePreview: React.FC<DatabasePreviewProps> = ({
   };
 
   const handleExportWord = async () => {
-    if (!onExportWord) return;
-    setConvertingToWord(true);
+    setExportingWord(true);
     try {
-      await onExportWord(preview);
+      const wordBlob = await apiService.exportWord(preview);
+      const url = window.URL.createObjectURL(wordBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'diccionario_datos.docx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
       showSnackbar('Word exportado exitosamente');
     } catch (error) {
       showSnackbar('Error al exportar Word', 'error');
     } finally {
-      setConvertingToWord(false);
-    }
-  };
-
-  const handleSaveVersion = async () => {
-    try {
-      await versionService.saveVersion(preview, userId, databaseType);
-      showSnackbar('Versión guardada exitosamente');
-    } catch (error) {
-      showSnackbar('Error al guardar la versión', 'error');
+      setExportingWord(false);
     }
   };
 
@@ -373,14 +359,6 @@ export const DatabasePreview: React.FC<DatabasePreviewProps> = ({
         </Typography>
         <Box>
           <Button
-            variant="outlined"
-            color="success"
-            onClick={handleSaveVersion}
-            sx={{ mr: 2 }}
-          >
-            Guardar versión
-          </Button>
-          <Button
             startIcon={<ArrowBackIcon />}
             onClick={onBack}
             sx={{ mr: 2 }}
@@ -397,21 +375,16 @@ export const DatabasePreview: React.FC<DatabasePreviewProps> = ({
           >
             {loading ? 'Generando...' : 'Exportar PDF'}
           </Button>
-          {showExportWord && (
-            <Button
-              variant="outlined"
-              startIcon={<WordIcon />}
-              onClick={handleExportWord}
-              disabled={convertingToWord}
-              size="large"
-              sx={{ 
-                borderColor: 'primary.main',
-                color: 'primary.main'
-              }}
-            >
-              {convertingToWord ? 'Descargando...' : 'Descargar Word'}
-            </Button>
-          )}
+          <Button
+            variant="contained"
+            color="warning"
+            startIcon={<WordIcon />}
+            onClick={handleExportWord}
+            disabled={exportingWord}
+            size="large"
+          >
+            {exportingWord ? 'Generando...' : 'Convertir a Word'}
+          </Button>
         </Box>
       </Box>
 
@@ -458,19 +431,6 @@ export const DatabasePreview: React.FC<DatabasePreviewProps> = ({
             </Box>
 
             <Typography variant="h6" gutterBottom>⚙️ Opciones de Exportación</Typography>
-            
-            {/* Información sobre conversión PDF a Word */}
-            {showExportWord && (
-              <Box mb={3} p={2} bgcolor="info.lighter" borderRadius={1} border="1px solid" borderColor="info.main">
-                <Typography variant="subtitle2" gutterBottom color="info.dark">
-                  💡 Exporta tu diccionario en formato Word (.docx)
-                </Typography>
-                <Typography variant="body2" color="info.dark">
-                  Puedes descargar directamente el archivo Word con el formato y tablas listas para editar.
-                </Typography>
-              </Box>
-            )}
-            
             {/* Opciones específicas para SQL */}
             {!isNoSQL && (
               <>
@@ -483,7 +443,6 @@ export const DatabasePreview: React.FC<DatabasePreviewProps> = ({
                   }
                   label="Incluir sentencias DML (INSERT, UPDATE, DELETE)"
                 />
-                
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -493,7 +452,6 @@ export const DatabasePreview: React.FC<DatabasePreviewProps> = ({
                   }
                   label="Incluir sentencias DDL (CREATE, ALTER, DROP)"
                 />
-                
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -505,7 +463,6 @@ export const DatabasePreview: React.FC<DatabasePreviewProps> = ({
                 />
               </>
             )}
-
             {/* Opciones específicas para NoSQL */}
             {isNoSQL && (
               <>
@@ -518,7 +475,6 @@ export const DatabasePreview: React.FC<DatabasePreviewProps> = ({
                   }
                   label="Incluir ejemplos de documentos JSON"
                 />
-                
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -528,7 +484,6 @@ export const DatabasePreview: React.FC<DatabasePreviewProps> = ({
                   }
                   label="Incluir información de índices"
                 />
-                
                 <FormControlLabel
                   control={
                     <Checkbox

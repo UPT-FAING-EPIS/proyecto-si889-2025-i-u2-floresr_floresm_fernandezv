@@ -13,6 +13,8 @@ export interface DatabaseConnectionDto {
   // Propiedades específicas para Redis
   redisDatabase?: number; // Para Redis (número de BD)
   useSsl?: boolean;       // Para Redis/otros
+  // NUEVO: Cadena de conexión personalizada
+  connectionString?: string;
 }
 
 export interface ConnectionResponseDto {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Box, Button, Card, CardContent, TextField, Typography, 
-  CircularProgress, Alert, Divider
+  CircularProgress, Alert, Divider, Checkbox, FormControlLabel
 } from '@mui/material';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -30,6 +30,7 @@ const SqlConnectionForm: React.FC<SqlConnectionFormProps> = ({ onPreviewGenerate
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [connectionToken, setConnectionToken] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [useConnectionString, setUseConnectionString] = useState<boolean>(false);
 
   // Manejar cambios en los campos del formulario
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,6 +80,12 @@ const SqlConnectionForm: React.FC<SqlConnectionFormProps> = ({ onPreviewGenerate
       setConnectionToken(response.token);
       setSuccessMessage(response.message);
       setIsConnected(true);
+      
+      // Guardar token y datos de conexión en localStorage para uso posterior
+      if (response.token) {
+        localStorage.setItem('connectionToken', response.token);
+      }
+      localStorage.setItem('connectionData', JSON.stringify(connectionData));
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -160,12 +167,32 @@ const SqlConnectionForm: React.FC<SqlConnectionFormProps> = ({ onPreviewGenerate
     }
   };
 
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUseConnectionString(e.target.checked);
+    if (!e.target.checked) {
+      setConnectionData(prev => ({ ...prev, connectionString: '' }));
+    }
+  };
+
   return (
     <Card variant="outlined" sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
       <CardContent>
-        <Typography variant="h5" component="h2" gutterBottom>
-          Conexión a SQL Server
-        </Typography>
+        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+          <Typography variant="h5" component="h2" gutterBottom>
+            Conexión a SQL Server
+          </Typography>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={useConnectionString}
+                onChange={handleCheckboxChange}
+                color="primary"
+              />
+            }
+            label="Usar cadena de conexión personalizada"
+            sx={{ ml: 2, whiteSpace: 'nowrap' }}
+          />
+        </Box>
         
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -180,45 +207,65 @@ const SqlConnectionForm: React.FC<SqlConnectionFormProps> = ({ onPreviewGenerate
         )}
         
         <form onSubmit={handleConnect}>
-          <TextField
-            label="Servidor"
-            name="server"
-            value={connectionData.server}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-            placeholder="localhost"
-          />
-          <TextField
-            label="Base de datos"
-            name="database"
-            value={connectionData.database}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-          />
-          <TextField
-            label="Usuario"
-            name="user"
-            value={connectionData.user}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-          />
-          <TextField
-            label="Contraseña"
-            name="password"
-            type="password"
-            value={connectionData.password}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-          />
-          
+          {!useConnectionString && (
+            <>
+              <TextField
+                label="Servidor"
+                name="server"
+                value={connectionData.server}
+                onChange={handleChange}
+                fullWidth
+                margin="normal"
+                required={!useConnectionString}
+                placeholder="localhost"
+                disabled={useConnectionString}
+              />
+              <TextField
+                label="Base de datos"
+                name="database"
+                value={connectionData.database}
+                onChange={handleChange}
+                fullWidth
+                margin="normal"
+                required={!useConnectionString}
+                disabled={useConnectionString}
+              />
+              <TextField
+                label="Usuario"
+                name="user"
+                value={connectionData.user}
+                onChange={handleChange}
+                fullWidth
+                margin="normal"
+                required={!useConnectionString}
+                disabled={useConnectionString}
+              />
+              <TextField
+                label="Contraseña"
+                name="password"
+                type="password"
+                value={connectionData.password}
+                onChange={handleChange}
+                fullWidth
+                margin="normal"
+                required={!useConnectionString}
+                disabled={useConnectionString}
+              />
+            </>
+          )}
+          {useConnectionString && (
+            <TextField
+              label="Cadena de conexión personalizada"
+              name="connectionString"
+              value={connectionData.connectionString || ''}
+              onChange={handleChange}
+              fullWidth
+              margin="normal"
+              required={useConnectionString}
+              placeholder="Ejemplo: Server=...;Database=...;User Id=...;Password=...;"
+              helperText="Si se llena, se usará esta cadena y se ignorarán los campos individuales."
+            />
+          )}
           <Box sx={{ mt: 3 }}>
             <Button
               type="submit"

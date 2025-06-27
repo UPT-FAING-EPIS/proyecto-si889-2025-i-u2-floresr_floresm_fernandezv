@@ -7,7 +7,7 @@ import { Lock as LockIcon } from '@mui/icons-material';
 import { apiService } from '../services/api-service';
 
 interface LoginFormProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (username: string) => void;
   onSwitchToRegister: () => void;
 }
 
@@ -45,7 +45,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, onSwitchToRegiste
       );
       
       if (isAuthenticated) {
-        onLoginSuccess();
+        onLoginSuccess(loginData.username);
       } else {
         setError('Usuario o contraseña incorrectos');
       }

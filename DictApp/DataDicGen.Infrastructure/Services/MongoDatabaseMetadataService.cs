@@ -16,13 +16,25 @@ public class MongoDatabaseMetadataService : IDatabaseMetadataService
     {
         var resultado = new List<TableSchemaDto>();
         var authSource = string.IsNullOrWhiteSpace(dto.AuthSource) ? "admin" : dto.AuthSource;
-        
-        // Construir cadena de conexión con puerto opcional
-        var port = dto.Port ?? 27017; // Puerto por defecto de MongoDB
-        var serverWithPort = dto.Port.HasValue ? $"{dto.Server}:{port}" : dto.Server;
-        var connectionString = $"mongodb://{dto.User}:{dto.Password}@{serverWithPort}/{dto.Database}?authSource={authSource}";
-        
-        var client = new MongoClient(connectionString);
+        // Si se provee una cadena de conexión personalizada, usarla directamente
+        string connectionString;
+        if (!string.IsNullOrWhiteSpace(dto.ConnectionString))
+        {
+            connectionString = dto.ConnectionString;
+            // Extraer el nombre de la base de datos de la cadena si no viene en dto.Database
+            if (string.IsNullOrWhiteSpace(dto.Database))
+            {
+                var mongoUrl = new MongoUrl(connectionString);
+                dto.Database = mongoUrl.DatabaseName;
+            }
+        }
+        else
+        {
+            var port = dto.Port ?? 27017; // Puerto por defecto de MongoDB
+            var serverWithPort = dto.Port.HasValue ? $"{dto.Server}:{port}" : dto.Server;
+            connectionString = $"mongodb://{dto.User}:{dto.Password}@{serverWithPort}/{dto.Database}?authSource={authSource}";
+        }
+        var client = new MongoDB.Driver.MongoClient(connectionString);
         var db = client.GetDatabase(dto.Database);
 
         var collections = await db.ListCollectionNamesAsync();
