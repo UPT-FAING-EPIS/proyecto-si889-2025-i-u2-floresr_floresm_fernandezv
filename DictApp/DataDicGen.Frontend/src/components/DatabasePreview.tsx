@@ -83,8 +83,8 @@ export const DatabasePreview: React.FC<DatabasePreviewProps> = ({
   const [editingTable, setEditingTable] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [convertingToWord, setConvertingToWord] = useState(false);
-  const [pdfGenerated, setPdfGenerated] = useState(false);
-  const [lastGeneratedPdf, setLastGeneratedPdf] = useState<Blob | null>(null);
+  // const [pdfGenerated, setPdfGenerated] = useState(false);
+  // const [lastGeneratedPdf, setLastGeneratedPdf] = useState<Blob | null>(null);
   const [filteredTables, setFilteredTables] = useState(initialPreview.tables);
   const [tabValue, setTabValue] = useState(0);
   const [snackbar, setSnackbar] = useState({ 
@@ -165,7 +165,7 @@ export const DatabasePreview: React.FC<DatabasePreviewProps> = ({
     try {
       await onExport(preview);
       showSnackbar('PDF exportado exitosamente');
-      setPdfGenerated(true);
+      // setPdfGenerated(true);
       // Si quieres también guardar el blob del PDF para conversión futura, 
       // necesitarías modificar la función onExport para retornarlo
     } catch (error) {

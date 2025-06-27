@@ -13,7 +13,6 @@ import CassandraConnectionForm from '../components/CassandraConnectionForm';
 import { DatabasePreview } from '../components/DatabasePreview';
 import { apiService } from '../services/api-service';
 import VersionHistoryPage from './VersionHistoryPage';
-import SidebarMenu from '../components/SidebarMenu';
 
 enum AppScreen {
   LOGIN,
@@ -35,7 +34,6 @@ const HomePage: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);  const [previewData, setPreviewData] = useState<any>(null);
   const [databaseType, setDatabaseType] = useState<'mysql' | 'postgresql' | 'mongodb' | 'sqlserver' | 'redis' | 'cassandra'>('mysql');
   const [userId, setUserId] = useState<string>(''); // <-- para historial
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Manejar el éxito del login
   const handleLoginSuccess = (username: string) => {
