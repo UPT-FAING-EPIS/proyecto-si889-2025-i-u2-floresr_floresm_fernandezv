@@ -2,8 +2,8 @@ import axios from 'axios';
 import { DatabaseConnectionDto, ConnectionResponseDto } from '../types/api-types';
 
 // URL base de la API backend (desplegada en AWS Elastic Beanstalk v2)
-//const API_URL = 'http://dictapp-backend-v2-env.eba-mxmstnzx.us-east-2.elasticbeanstalk.com/api';
-const API_URL = 'https://lgdnqienk6.execute-api.us-east-2.amazonaws.com/api';
+const API_URL = 'http://dictapp-backend-v2-env.eba-mxmstnzx.us-east-2.elasticbeanstalk.com/api';
+//const API_URL = 'https://lgdnqienk6.execute-api.us-east-2.amazonaws.com/api';
  //const API_URL = 'http://localhost:5175/api';
 // Crear una instancia de axios con configuración personalizada
 const apiClient = axios.create({
