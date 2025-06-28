@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://dictapp-backend-v2-env.eba-mxmstnzx.us-east-2.elasticbeanstalk.com/api';
+//const API_URL = 'http://dictapp-backend-v2-env.eba-mxmstnzx.us-east-2.elasticbeanstalk.com/api';
+const API_URL = 'https://lgdnqienk6.execute-api.us-east-2.amazonaws.com/api';
 const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
