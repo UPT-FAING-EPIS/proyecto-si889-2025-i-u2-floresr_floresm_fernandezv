@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataDicGen.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250626185645_AddDictionaryVersion")]
-    partial class AddDictionaryVersion
+    [Migration("20250703222516_NuevaMigracion")]
+    partial class NuevaMigracion
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

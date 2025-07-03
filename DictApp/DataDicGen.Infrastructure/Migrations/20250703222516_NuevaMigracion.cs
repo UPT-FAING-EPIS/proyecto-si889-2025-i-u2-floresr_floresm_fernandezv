@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DataDicGen.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class AddDictionaryVersion : Migration
+    public partial class NuevaMigracion : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -29,6 +29,20 @@ namespace DataDicGen.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_DictionaryVersions", x => x.Id);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Username = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Password = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
+                });
         }
 
         /// <inheritdoc />
@@ -36,6 +50,9 @@ namespace DataDicGen.Infrastructure.Migrations
         {
             migrationBuilder.DropTable(
                 name: "DictionaryVersions");
+
+            migrationBuilder.DropTable(
+                name: "Users");
         }
     }
 }
